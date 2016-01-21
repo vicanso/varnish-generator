@@ -1,0 +1,30 @@
+[
+	{
+		"name": "timtam",
+		"host": "black",
+		"prefix": "/timtam",
+		"ip": "127.0.0.1",
+		"port": 3000
+	},
+	{
+		"name": "timtam",
+		"host": "black",
+		"prefix": "/timtam",
+		"ip": "127.0.0.1",
+		"port": 3010
+	},
+	{
+		"name": "albi",
+		"host": "white",
+		"prefix": "/albi",
+		"ip": "127.0.0.1",
+		"port": 3020
+	},
+	{
+		"name": "albi",
+		"host": "white",
+		"prefix": "/albi",
+		"ip": "127.0.0.1",
+		"port": 3030
+	}
+]

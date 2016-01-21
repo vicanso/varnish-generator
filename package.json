@@ -1,0 +1,34 @@
+{
+  "name": "varnish-generator",
+  "version": "0.0.1",
+  "description": "generate varnish vcl file",
+  "main": "index.js",
+  "scripts": {
+    "eslint": "node ./node_modules/.bin/eslint index.js",
+    "test": "node ./node_modules/.bin/eslint index.js && node ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha ./test/*.js --"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vicanso/varnish-generator.git"
+  },
+  "keywords": [
+    "varnish"
+  ],
+  "author": {
+    "name": "vicanso 小墨鱼",
+    "email": "vicansocanbico@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vicanso/varnish-generator/issues"
+  },
+  "homepage": "https://github.com/vicanso/varnish-generator#readme",
+  "devDependencies": {
+    "eslint": "^1.10.3",
+    "istanbul": "^0.4.2",
+    "mocha": "^2.3.4"
+  },
+  "dependencies": {
+    "lodash": "^4.0.0"
+  }
+}
