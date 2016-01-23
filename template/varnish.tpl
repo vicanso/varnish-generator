@@ -6,27 +6,41 @@ import directors;
 <%= backendConfig %>
 # backend end
 
+
+#############
+# Housekeeping
+
+# init start
+<%= initConfig %>
+# init end
+
+sub vcl_fini {
+  return (ok);
+}
+
 #######################################################################
 # Client side
 
 
 sub vcl_recv {
+  call custom_ctrl;
+
 	/* We do not support SPDY or HTTP/2.0 */
 	if (req.method == "PRI") {
 		return (synth(405));
 	}
 
-  /* set x-forwarded-for */
+  /* set X-Forwarded-For */
   if(req.restarts == 0){
-    if(req.http.x-forwarded-for){
-      set req.http.x-forwarded-for = req.http.x-forwarded-for + ", " + client.ip;
+    if(req.http.X-Forwarded-For){
+      set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
     }else{
-      set req.http.x-forwarded-for = client.ip;
+      set req.http.X-Forwarded-For = client.ip;
     }
-    if(req.http.via){
-      set req.http.via = req.http.via + ",<%= name %>";
+    if(req.http.Via){
+      set req.http.Via = req.http.Via + ", <%= name %>";
     }else{
-      set req.http.via = "<%= name %>";
+      set req.http.Via = "<%= name %>";
     }
   }
 
@@ -67,7 +81,7 @@ sub vcl_recv {
   }
 
   # Send Surrogate-Capability headers to announce ESI support to backend
-  set req.http.Surrogate-Capability = "key=ESI/1.0";
+  # set req.http.Surrogate-Capability = "key=ESI/1.0";
 
   # all requst should be cacheable, so we remove cookie
   unset req.http.Cookie;
@@ -111,7 +125,7 @@ sub vcl_hit {
   }
   # backend is healthy
   if(std.healthy(req.backend_hint)){
-  	# TODY 3s should be use Cache-Control: m-stale
+  	# TODO 3s should be use Cache-Control: m-stale
     if(obj.ttl + 3s > 0s){
       return (deliver);
     }
@@ -135,8 +149,33 @@ sub vcl_deliver {
   # response to the client.
   #
   # You can do accounting or modifying the final object here.
-  set resp.http.X-hits = obj.hits;
+  set resp.http.X-Hits = obj.hits;
+  return (deliver);
+}
 
+
+
+# 自定义的一些url的处理
+sub custom_ctrl{
+  #响应healthy检测
+  if(req.url == "/ping"){
+    return(synth(701));
+  }
+  if(req.url == "/vesrion") {
+    return(synth(702));
+  }
+}
+
+
+sub vcl_synth {
+  if(resp.status == 701){
+    synthetic("pong");
+  } elsif(resp.status == 702){
+    synthetic("<%= version %>");
+  }
+  set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
+  set resp.status = 200;
+  set resp.http.Content-Type = "text/plain; charset=utf-8";
   return (deliver);
 }
 
@@ -153,8 +192,8 @@ sub vcl_backend_fetch {
 sub vcl_backend_response {
   # 该数据在失效之后，保存多长时间才被删除（用于在服务器down了之后，还可以提供数据给用户）
   set beresp.grace = 30m;
-  # 若返回的内容是文本类，则压缩该数据（根据response header的content-type判断）
-  if(beresp.http.content-type ~ "text" || beresp.http.content-type ~ "application/javascript" || beresp.http.content-type ~ "application/json"){
+  # 若返回的内容是文本类，则压缩该数据（根据response header的Content-Type判断）
+  if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
     set beresp.do_gzip = true;
   }
 
@@ -177,19 +216,11 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
+  # 缓存在过期之后保留多长时间，主要用于(If-Modified-Since / If-None-Match)
+  set beresp.keep = 10s;
   return (deliver);
 }
 
 
-#############
-# Housekeeping
-
-# init start
-<%= initConfig %>
-# init end
-
-sub vcl_fini {
-  return (ok);
-}
 
 

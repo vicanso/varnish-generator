@@ -64,6 +64,7 @@ function getBackendConfig(serverList) {
 					try {
 						arr.push(template(tmp));
 					} catch (err) {
+						/* istanbul ignore if */
 						console.error(err);
 					}
 				});
@@ -88,7 +89,7 @@ function getInitConfig(serverList) {
 				const name = servers[0].name;
 				arr.push(`new ${name} = directors.random();`);
 				_.forEach(servers, (server, i) => {
-					arr.push(`${name}.add_backend(${name + i}, ${server.weight || 1})`);
+					arr.push(`${name}.add_backend(${name + i}, ${server.weight || 1});`);
 				});
 			});
 			_.forEach(arr, (tmp, i) => {
@@ -185,6 +186,7 @@ function getVcl(config){
 function readFilePromise(file) {
 	return new Promise((resolve, reject) => {
 		fs.readFile(file, 'utf8', (err, data) => {
+			/* istanbul ignore if */
 			if (err) {
 				reject(err);
 			} else {
