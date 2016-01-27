@@ -32,16 +32,14 @@ sub vcl_recv {
 
   /* set X-Forwarded-For */
   if(req.restarts == 0){
-    if(req.http.X-Forwarded-For){
-      set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
-    }else{
-      set req.http.X-Forwarded-For = client.ip;
-    }
     if(req.http.Via){
       set req.http.Via = req.http.Via + ", <%= name %>";
     }else{
       set req.http.Via = "<%= name %>";
     }
+    
+    set req.http.X-Varnish-StartedAt = std.time2real(now, 0.0);
+    
   }
 
 
@@ -126,7 +124,7 @@ sub vcl_hit {
   # backend is healthy
   if(std.healthy(req.backend_hint)){
   	# TODO 3s should be use Cache-Control: m-stale
-    if(obj.ttl + 3s > 0s){
+    if(obj.ttl + <%= stale %> > 0s){
       return (deliver);
     }
   }else if(obj.ttl + obj.grace > 0s){
@@ -149,7 +147,9 @@ sub vcl_deliver {
   # response to the client.
   #
   # You can do accounting or modifying the final object here.
+  unset resp.http.Via;
   set resp.http.X-Hits = obj.hits;
+  set resp.http.X-Varnish-Times = std.time2real(now, 0.0) + ", " + req.http.X-Varnish-StartedAt;
   return (deliver);
 }
 
@@ -191,7 +191,7 @@ sub vcl_backend_fetch {
 
 sub vcl_backend_response {
   # 该数据在失效之后，保存多长时间才被删除（用于在服务器down了之后，还可以提供数据给用户）
-  set beresp.grace = 30m;
+  set beresp.grace = <%= grace %>;
   # 若返回的内容是文本类，则压缩该数据（根据response header的Content-Type判断）
   if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
     set beresp.do_gzip = true;
@@ -217,7 +217,7 @@ sub vcl_backend_response {
     set beresp.do_esi = true;
   }
   # 缓存在过期之后保留多长时间，主要用于(If-Modified-Since / If-None-Match)
-  set beresp.keep = 10s;
+  set beresp.keep = <%= keep %>;
   return (deliver);
 }
 

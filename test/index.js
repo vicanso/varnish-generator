@@ -3,11 +3,11 @@ const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 const varnishGenerator = require('..');
-const backends = require('../backends');
-const instance = 'varnish-test';
+const varnishConfig = require('../config.json');
+const backends = varnishConfig.backends;
 const request = require('superagent');
 var varnishdInstance = null;
-// require('./support/server');
+const server = require('./support/server');
 
 
 function get(url) {
@@ -59,14 +59,17 @@ describe('varnish-generator', () => {
 
 
 	it('should get vcl file success', done => {
-		varnishGenerator.getConfig(backends).then(config => {
-			config.name = instance;
-			config.version = (new Date()).toISOString();
-			return varnishGenerator.getVcl(config);
-		}).then(vcl => {
+		// stale 缓存过期之后多长时间还可用
+		// keep 缓存过期之后，数据在多长时间可用于 If-Modified-Since / If-None-Match
+		// grace 缓存过期多长数据被删除（用于在所有backend都出问题时返回）
+		// backends backend列表
+		// name varnish实例名称（用于区分不同的varnish实例）
+		// version 版本号（用来标记vcl file）
+		varnishGenerator.getVcl(varnishConfig).then(vcl => {
 			fs.writeFile(path.join(__dirname, '../default.vcl'), vcl, done);
 		}).catch(done);
 	});
+
 
 	it('should run varnishd success', function(done) {
 		this.timeout(10 * 1000);
@@ -88,7 +91,7 @@ describe('varnish-generator', () => {
 		varnishdInstance.stderr.on('data', (data) => {
 			console.error(`stderr:${data}`);
 		});
-		setTimeout(done, 5000);
+		setTimeout(done, 5 * 1000);
 	});
 
 	it('should ping varnish success', done => {
@@ -136,7 +139,7 @@ describe('varnish-generator', () => {
 				} else {
 					const data = res.body;
 					assert.equal(data.via, 'varnish-test');
-					assert.equal(data['x-forwarded-for'], '127.0.0.1, 127.0.0.1');
+					assert.equal(data['x-forwarded-for'], '127.0.0.1');
 					done();
 				}
 			});
@@ -230,7 +233,7 @@ describe('varnish-generator', () => {
 	// hit for pass
 	it('should not cache response Cache-Control:max-age=0 success', function(
 		done) {
-		this.timeout(5000);
+		this.timeout(5 * 1000);
 
 		function check(times) {
 			const start = Date.now();
@@ -262,7 +265,7 @@ describe('varnish-generator', () => {
 
 	// hit for pass
 	it('should not cache response Cache-Control:no-store success', function(done) {
-		this.timeout(5000);
+		this.timeout(5 * 1000);
 
 		function check(times) {
 			const start = Date.now();
@@ -295,7 +298,7 @@ describe('varnish-generator', () => {
 
 	// hit for pass when set-cookie
 	it('should not cache response set-cookie success', function(done) {
-		this.timeout(5000);
+		this.timeout(5 * 1000);
 
 		function check(times) {
 			const start = Date.now();
@@ -328,7 +331,7 @@ describe('varnish-generator', () => {
 
 	// will responese stale while in stale time
 	it('should response from cache while in stale time', function(done) {
-		this.timeout(10000);
+		this.timeout(10 * 1000);
 		let data = null;
 		function check(times) {
 			get('/timtam/max-age/1')
@@ -344,7 +347,7 @@ describe('varnish-generator', () => {
 					} else {
 						assert.notEqual(data.date, res.body.date);
 						assert.equal(res.get('age'), 1);
-						done();
+						return done();
 					}
 					setTimeout(function(){
 						check(++times);
@@ -354,14 +357,54 @@ describe('varnish-generator', () => {
 		check(0);
 	});
 
-	// backend is healthy, stale time
+	it('should send headers while cache data is stale but keep', function(done) {
+		this.timeout(10 * 1000);
+		let etag = '';
+		function check(times) {
+			get('/timtam/keep')
+				.end((err, res) => {
+					if (err) {
+						return done(err);
+					}
+					assert.equal(res.get('age'), 0);
+					assert.equal(res.get('X-Hits'), 0);
+					if (times === 1) {
+						assert.equal(res.body['if-none-match'] , etag);
+						return done();
+					}
+					etag = res.get('ETag');
+					setTimeout(function() {
+						check(++times);
+					}, 5000);
+				});
+		}
+		check(0);
+	});
 
-	// backend is not healthy
-
-	// parallel request
+	it('should parallel request success', function(done) {
+		this.timeout(5000);
+		let data = null;
+		function check(){
+			get('/timtam/max-age/23')
+				.end((err, res) => {
+					if (err) {
+						return done(err);
+					}
+					if (data) {
+						assert.equal(data.msg, res.body.msg);
+						assert.equal(data.random, res.body.random);
+						assert.equal(data.date, res.body.date);
+						return done();
+					}
+					data = res.body;
+				});
+		}
+		check();
+		check();
+	});
 
 	it('should close varnishd success', done => {
 		varnishdInstance.kill();
-		done();
+		server.close(done);
 	});
 });

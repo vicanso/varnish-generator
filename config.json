@@ -1,0 +1,35 @@
+{
+	"stale": "2s",
+	"keep": "5s",
+	"grace": "5m",
+	"backends": [
+		{
+			"name": "timtam",
+			"prefix": "/timtam",
+			"ip": "127.0.0.1",
+			"port": 3000
+		},
+		{
+			"name": "timtam",
+			"prefix": "/timtam",
+			"ip": "127.0.0.1",
+			"port": 3010
+		},
+		{
+			"name": "albi",
+			"host": "white",
+			"prefix": "/albi",
+			"ip": "127.0.0.1",
+			"port": 3020
+		},
+		{
+			"name": "albi",
+			"host": "white",
+			"prefix": "/albi",
+			"ip": "127.0.0.1",
+			"port": 3030
+		}
+	],
+	"name": "varnish-test",
+	"version": "2016-01-27"
+}

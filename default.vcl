@@ -3,9 +3,51 @@ import std;
 import directors;
 
 # backend start
+backend albi0{
+  .host = "127.0.0.1";
+  .port = "3020";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend albi1{
+  .host = "127.0.0.1";
+  .port = "3030";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
 backend timtam0{
-  .host = "10.173.180.9";
+  .host = "127.0.0.1";
   .port = "3000";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend timtam1{
+  .host = "127.0.0.1";
+  .port = "3010";
   .connect_timeout = 3s;
   .first_byte_timeout = 10s;
   .between_bytes_timeout = 2s;
@@ -25,8 +67,12 @@ backend timtam0{
 
 # init start
 sub vcl_init{
+  new albi = directors.random();
+  albi.add_backend(albi0, 1);
+  albi.add_backend(albi1, 1);
   new timtam = directors.random();
   timtam.add_backend(timtam0, 1);
+  timtam.add_backend(timtam1, 1);
 }
 # init end
 
@@ -48,21 +94,21 @@ sub vcl_recv {
 
   /* set X-Forwarded-For */
   if(req.restarts == 0){
-    if(req.http.X-Forwarded-For){
-      set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
-    }else{
-      set req.http.X-Forwarded-For = client.ip;
-    }
     if(req.http.Via){
       set req.http.Via = req.http.Via + ", varnish-test";
     }else{
       set req.http.Via = "varnish-test";
     }
+    
+    set req.http.X-Varnish-StartedAt = std.time2real(now, 0.0);
+    
   }
 
 
   /* backend selctor */
-  if(req.url ~ "/timtam"){
+  if(req.http.host == "white" && req.url ~ "/albi"){
+    set req.backend_hint = albi.backend();
+  }elsif(req.url ~ "/timtam"){
     set req.backend_hint = timtam.backend();
   }
 	
@@ -167,7 +213,9 @@ sub vcl_deliver {
   # response to the client.
   #
   # You can do accounting or modifying the final object here.
+  unset resp.http.Via;
   set resp.http.X-Hits = obj.hits;
+  set resp.http.X-Varnish-Times = std.time2real(now, 0.0) + ", " + req.http.X-Varnish-StartedAt;
   return (deliver);
 }
 
@@ -189,7 +237,7 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2016-01-23T12:47:09.564Z");
+    synthetic("2016-01-27");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

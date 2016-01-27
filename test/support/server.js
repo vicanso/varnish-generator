@@ -3,7 +3,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 
-createServer(3000, '/timtam');
+module.exports = createServer(3000, '/timtam');
 
 /**
  * [createServer description]
@@ -33,6 +33,7 @@ function createServer(port, prefix) {
 	});
 
 	app.get('/headers', (req, res) => {
+		res.set('Cache-Control', 'public, max-age=1');
 		res.json(req.headers);
 	});
 
@@ -79,8 +80,6 @@ function createServer(port, prefix) {
 				msg: 'set-cookie'
 			});
 		}, 1200);
-
-
 	});
 
 	app.all('/method', (req, res) => {
@@ -91,7 +90,12 @@ function createServer(port, prefix) {
 		});
 	});
 
-	app.listen(port, () => {
+	app.get('/keep', (req, res) => {
+		res.set('Cache-Control', 'public, max-age=1');
+		res.json(req.headers);
+	});
+
+	return app.listen(port, () => {
 		console.info(`listen on:${port}`);
 	});
 }

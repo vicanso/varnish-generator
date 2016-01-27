@@ -169,11 +169,20 @@ function getConfig(serverList) {
  * @return {[type]}        [description]
  */
 function getVcl(config){
-	return readFilePromise(path.join(__dirname,
-    'template/varnish.tpl'))
-		.then(tpl => {
-			return _.template(tpl)(config);
-		});
+	if (!config.backends || !config.name || !config.version) {
+		throw new Error('backends, name and version can not be null');
+	}
+	_.extend(config, {
+		stale: '3s',
+		keep: '10s',
+		grace: '30m'
+	});
+	return getConfig(config.backends).then(data => {
+		_.extend(config, data);
+		return readFilePromise(path.join(__dirname, 'template/varnish.tpl'));
+	}).then(tpl => {
+		return _.template(tpl)(config);
+	});
 }
 
 
