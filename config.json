@@ -31,5 +31,6 @@
 		}
 	],
 	"name": "varnish-test",
-	"version": "2016-01-27"
+	"version": "2016-01-27",
+	"updatedAt": ["2016-01-27"]
 }

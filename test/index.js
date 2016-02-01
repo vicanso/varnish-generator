@@ -107,7 +107,7 @@ describe('varnish-generator', () => {
 	});
 
 	it('should get varnish config version success', done => {
-		get('/vesrion')
+		get('/varnish/version')
 			.end((err, res) => {
 				if (err) {
 					done(err);

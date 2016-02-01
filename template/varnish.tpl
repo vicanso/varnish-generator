@@ -161,8 +161,11 @@ sub custom_ctrl{
   if(req.url == "/ping"){
     return(synth(701));
   }
-  if(req.url == "/vesrion") {
+  if(req.url == "/varnish/version") {
     return(synth(702));
+  }
+  if(req.url == "/varnish/updated-time") {
+    return(synth(703));
   }
 }
 
@@ -172,6 +175,8 @@ sub vcl_synth {
     synthetic("pong");
   } elsif(resp.status == 702){
     synthetic("<%= version %>");
+  } elsif(resp.status == 703){
+    synthetic("<%= updatedAt %>");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -201,7 +206,7 @@ sub vcl_backend_response {
   # 对于Set-Cookie的响应设置为不可缓存
   if (beresp.ttl <= 0s ||
     beresp.http.Set-Cookie ||
-    beresp.http.Surrogate-control ~ "no-store" ||
+    beresp.http.Surrogate-Control ~ "no-store" ||
     (!beresp.http.Surrogate-Control &&
       beresp.http.Cache-Control ~ "no-cache|no-store|private") ||
     beresp.http.Vary == "*"){

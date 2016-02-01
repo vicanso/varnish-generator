@@ -17,7 +17,7 @@ exports.getVcl = getVcl;
 function sortServer(serverList) {
 	let result = {};
 	_.forEach(serverList, function(server) {
-		let name = server.name;
+		const name = server.name;
 		if (!result[name]) {
 			result[name] = [];
 		}
@@ -26,10 +26,11 @@ function sortServer(serverList) {
 	// 将有配置host的排在前面
 	result = _.values(result);
 	result.sort(function(tmp1, tmp2) {
-		let host1 = tmp1[0].host;
-		let host2 = tmp2[0].host;
-		let name1 = tmp1[0].name;
-		let name2 = tmp2[0].name;
+		const host1 = tmp1[0].host;
+		const host2 = tmp2[0].host;
+		const name1 = tmp1[0].name;
+		const name2 = tmp2[0].name;
+		/* istanbul ignore next */
 		if (host1 && !host2) {
 			return -1;
 		} else if (!host1 && host2) {
@@ -64,7 +65,7 @@ function getBackendConfig(serverList) {
 					try {
 						arr.push(template(tmp));
 					} catch (err) {
-						/* istanbul ignore if */
+						/* istanbul ignore next */
 						console.error(err);
 					}
 				});
@@ -113,13 +114,16 @@ function getBackendSelectConfig(serverList) {
 	_.forEach(serverList, (servers) => {
 		const server = servers[0];
 		const arr = [];
+		/* istanbul ignore else */
 		if (server.host) {
 			arr.push(`req.http.host == "${server.host}"`);
 		}
+		/* istanbul ignore else */
 		if (server.prefix) {
 			arr.push(`req.url ~ "${server.prefix}"`);
 		}
 		const condition = arr.join(' && ');
+		/* istanbul ignore else */
 		if (condition) {
 			result.push({
 				name: server.name,
@@ -137,6 +141,7 @@ function getBackendSelectConfig(serverList) {
 		}
 		arr.push(`  set req.backend_hint = ${item.name}.backend();`);
 	});
+	/* istanbul ignore else */
 	if (arr.length) {
 		arr.push('}');
 		_.forEach(arr, (tmp, i) => {
@@ -169,6 +174,7 @@ function getConfig(serverList) {
  * @return {[type]}        [description]
  */
 function getVcl(config){
+	/* istanbul ignore if */
 	if (!config.backends || !config.name || !config.version) {
 		throw new Error('backends, name and version can not be null');
 	}
