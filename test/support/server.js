@@ -95,6 +95,15 @@ function createServer(port, prefix) {
 		res.json(req.headers);
 	});
 
+	app.get('/304', (req, res) => {
+		const etag = 'W/"2f26-N4gKPDCCU6VknUpW3vrT3w"';
+		if (req.get('If-None-Match') === 'W/"2f26-N4gKPDCCU6VknUpW3vrT3w"') {
+			res.status(304).end();
+		} else {
+			res.set('ETag', etag).end('test-data');
+		}
+	});
+
 	return app.listen(port, () => {
 		console.info(`listen on:${port}`);
 	});

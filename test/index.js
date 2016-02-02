@@ -8,14 +8,15 @@ const backends = varnishConfig.backends;
 const request = require('superagent');
 var varnishdInstance = null;
 const server = require('./support/server');
+const listenPort = 8112;
 
 
 function get(url) {
-	return request.get(`http://localhost:8080${url}`);
+	return request.get(`http://localhost:${listenPort}${url}`);
 }
 
 function post(url) {
-	return request.post(`http://localhost:8080${url}`);
+	return request.post(`http://localhost:${listenPort}${url}`);
 }
 
 const backendConfig =
@@ -81,7 +82,7 @@ describe('varnish-generator', () => {
 			'-s',
 			'malloc,128m',
 			'-a',
-			'0.0.0.0:8080',
+			'0.0.0.0:' + listenPort,
 			'-F'
 		];
 		varnishdInstance = spawn('/usr/local/sbin/varnishd', args);
@@ -93,6 +94,7 @@ describe('varnish-generator', () => {
 		});
 		setTimeout(done, 5 * 1000);
 	});
+
 
 	it('should ping varnish success', done => {
 		get('/ping')
@@ -227,6 +229,22 @@ describe('varnish-generator', () => {
 				}
 				assert.equal(res.get('Content-Encoding'), 'gzip');
 				done();
+			});
+	});
+
+	it('should get data success with If-None-Match', done => {
+		get('/timtam/304')
+			.end((err, res) => {
+				if (err) {
+					return done(err);
+				}
+				assert.equal(res.status, 200);
+				get('/timtam/304')
+					.set('If-None-Match', res.get('ETag'))
+					.end((err, res) => {
+						assert.equal(res.status, 304);
+						done();
+					});
 			});
 	});
 

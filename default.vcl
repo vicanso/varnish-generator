@@ -87,10 +87,10 @@ sub vcl_fini {
 sub vcl_recv {
   call custom_ctrl;
 
-	/* We do not support SPDY or HTTP/2.0 */
-	if (req.method == "PRI") {
-		return (synth(405));
-	}
+  /* We do not support SPDY or HTTP/2.0 */
+  if (req.method == "PRI") {
+    return (synth(405));
+  }
 
   /* set X-Forwarded-For */
   if(req.restarts == 0){
@@ -111,8 +111,8 @@ sub vcl_recv {
   }elsif(req.url ~ "/timtam"){
     set req.backend_hint = timtam.backend();
   }
-	
-	if (req.method != "GET" &&
+  
+  if (req.method != "GET" &&
     req.method != "HEAD" &&
     req.method != "PUT" &&
     req.method != "POST" &&
@@ -189,7 +189,7 @@ sub vcl_hit {
   }
   # backend is healthy
   if(std.healthy(req.backend_hint)){
-  	# TODO 3s should be use Cache-Control: m-stale
+    # TODO 3s should be use Cache-Control: m-stale
     if(obj.ttl + 3s > 0s){
       return (deliver);
     }
@@ -263,6 +263,7 @@ sub vcl_backend_fetch {
 sub vcl_backend_response {
   # 该数据在失效之后，保存多长时间才被删除（用于在服务器down了之后，还可以提供数据给用户）
   set beresp.grace = 30m;
+  
   # 若返回的内容是文本类，则压缩该数据（根据response header的Content-Type判断）
   if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
     set beresp.do_gzip = true;
@@ -287,6 +288,10 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
+
+  # 该数据在失效之后，保存多长时间才被删除（用于在服务器down了之后，还可以提供数据给用户）
+  set beresp.grace = 30m;
+  
   # 缓存在过期之后保留多长时间，主要用于(If-Modified-Since / If-None-Match)
   set beresp.keep = 10s;
   return (deliver);
