@@ -195,6 +195,8 @@ sub vcl_backend_fetch {
 
 
 sub vcl_backend_response {
+  set beresp.keep = 0s;
+  set beresp.grace = 0s;
   # 若返回的内容是文本类，则压缩该数据（根据response header的Content-Type判断）
   if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
     set beresp.do_gzip = true;

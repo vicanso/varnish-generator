@@ -261,9 +261,8 @@ sub vcl_backend_fetch {
 
 
 sub vcl_backend_response {
-  # 该数据在失效之后，保存多长时间才被删除（用于在服务器down了之后，还可以提供数据给用户）
-  set beresp.grace = 30m;
-  
+  set beresp.keep = 0s;
+  set beresp.grace = 0s;
   # 若返回的内容是文本类，则压缩该数据（根据response header的Content-Type判断）
   if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
     set beresp.do_gzip = true;
