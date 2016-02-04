@@ -1,6 +1,6 @@
 {
   "name": "varnish-generator",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "generate varnish vcl file",
   "main": "index.js",
   "scripts": {
@@ -31,6 +31,6 @@
     "superagent": "^1.7.1"
   },
   "dependencies": {
-    "lodash": "^4.0.0"
+    "lodash": "^4.2.1"
   }
 }

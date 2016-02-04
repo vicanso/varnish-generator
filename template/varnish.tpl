@@ -29,18 +29,23 @@ sub vcl_recv {
   if (req.method == "PRI") {
     return (synth(405));
   }
-
-  /* set X-Forwarded-For */
   if(req.restarts == 0){
+    /* set X-Forwarded-For */
+    if(req.http.X-Forwarded-For){
+      set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
+    }else{
+      set req.http.X-Forwarded-For = client.ip;
+    }
+    /* set Via */
     if(req.http.Via){
       set req.http.Via = req.http.Via + ", <%= name %>";
     }else{
       set req.http.Via = "<%= name %>";
     }
-    
+
     set req.http.X-Varnish-StartedAt = std.time2real(now, 0.0);
-    
   }
+
 
 
   /* backend selctor */

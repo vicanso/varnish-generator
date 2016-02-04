@@ -141,7 +141,7 @@ describe('varnish-generator', () => {
 				} else {
 					const data = res.body;
 					assert.equal(data.via, 'varnish-test');
-					assert.equal(data['x-forwarded-for'], '127.0.0.1');
+					assert.equal(data['x-forwarded-for'], '127.0.0.1, 127.0.0.1');
 					done();
 				}
 			});
