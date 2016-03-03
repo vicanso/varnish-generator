@@ -35,6 +35,20 @@ describe('varnish-generator', () => {
 		}).catch(done);
 	});
 
+	it('should get backend(name include "-") config success', done => {
+		varnishGenerator.getBackendConfig([
+			{
+				name: 'my-app',
+				prefix: '/my-app',
+				ip: '127.0.0.1',
+				port: 3000
+			}
+		]).then(result => {
+			assert.equal(result, 'backend myApp0{\n  .host = "127.0.0.1";\n  .port = "3000";\n  .connect_timeout = 3s;\n  .first_byte_timeout = 10s;\n  .between_bytes_timeout = 2s;\n  .probe = {\n    .url = "/ping";\n    .interval = 3s;\n    .timeout = 5s;\n    .window = 5;\n    .threshold = 3;\n  }\n}');
+			done();
+		}).catch(done);
+	});
+
 	it('should get init config success', done => {
 		varnishGenerator.getInitConfig(backends).then(result => {
 			assert.equal(result, initConfig);

@@ -61,6 +61,7 @@ function getBackendConfig(serverList) {
 			_.forEach(serverList, (servers) => {
 				_.forEach(servers, (server, i) => {
 					const tmp = _.pick(server, 'name ip port'.split(' '));
+					tmp.name = _.camelCase(tmp.name);
 					tmp.name += i;
 					try {
 						arr.push(template(tmp));

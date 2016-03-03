@@ -1,6 +1,6 @@
 {
   "name": "varnish-generator",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "generate varnish vcl file",
   "main": "index.js",
   "scripts": {
@@ -24,13 +24,13 @@
   },
   "homepage": "https://github.com/vicanso/varnish-generator#readme",
   "devDependencies": {
-    "eslint": "^1.10.3",
+    "eslint": "^2.2.0",
     "express": "^4.13.4",
     "istanbul": "^0.4.2",
-    "mocha": "^2.3.4",
-    "superagent": "^1.7.1"
+    "mocha": "^2.4.5",
+    "superagent": "^1.7.2"
   },
   "dependencies": {
-    "lodash": "^4.2.1"
+    "lodash": "^4.6.1"
   }
 }
