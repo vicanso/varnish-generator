@@ -61,7 +61,6 @@ function getBackendConfig(serverList) {
 			_.forEach(serverList, (servers) => {
 				_.forEach(servers, (server, i) => {
 					const tmp = _.pick(server, 'name ip port'.split(' '));
-					tmp.name = _.camelCase(tmp.name);
 					tmp.name += i;
 					try {
 						arr.push(template(tmp));
@@ -183,6 +182,9 @@ function getVcl(config){
 		stale: '3s',
 		keep: '10s',
 		grace: '30m'
+	});
+	_.forEach(config.backends, tmp => {
+		tmp.name = _.camelCase(tmp.name);
 	});
 	return getConfig(config.backends).then(data => {
 		_.extend(config, data);
