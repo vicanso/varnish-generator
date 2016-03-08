@@ -59,6 +59,20 @@ backend timtam1{
     .threshold = 3;
   }
 }
+backend defaultBackend0{
+  .host = "127.0.0.1";
+  .port = "3040";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
 # backend end
 
 
@@ -73,6 +87,8 @@ sub vcl_init{
   new timtam = directors.random();
   timtam.add_backend(timtam0, 1);
   timtam.add_backend(timtam1, 1);
+  new defaultBackend = directors.random();
+  defaultBackend.add_backend(defaultBackend0, 1);
 }
 # init end
 
@@ -111,6 +127,7 @@ sub vcl_recv {
 
 
   /* backend selctor */
+  set req.backend_hint = defaultBackend.backend();
   if(req.http.host == "white" && req.url ~ "/albi"){
     set req.backend_hint = albi.backend();
   }elsif(req.url ~ "/timtam"){

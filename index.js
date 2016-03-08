@@ -61,6 +61,7 @@ function getBackendConfig(serverList) {
 			_.forEach(serverList, (servers) => {
 				_.forEach(servers, (server, i) => {
 					const tmp = _.pick(server, 'name ip port'.split(' '));
+					tmp.name = _.camelCase(tmp.name);
 					tmp.name += i;
 					try {
 						arr.push(template(tmp));
@@ -87,7 +88,7 @@ function getInitConfig(serverList) {
 			const template = _.template(tpl);
 			const arr = [];
 			_.forEach(serverList, (servers) => {
-				const name = servers[0].name;
+				const name = _.camelCase(servers[0].name);
 				arr.push(`new ${name} = directors.random();`);
 				_.forEach(servers, (server, i) => {
 					arr.push(`${name}.add_backend(${name + i}, ${server.weight || 1});`);
@@ -111,6 +112,7 @@ function getInitConfig(serverList) {
 function getBackendSelectConfig(serverList) {
 	serverList = sortServer(serverList);
 	const result = [];
+	let defaultBackend;
 	_.forEach(serverList, (servers) => {
 		const server = servers[0];
 		const arr = [];
@@ -123,23 +125,27 @@ function getBackendSelectConfig(serverList) {
 			arr.push(`req.url ~ "${server.prefix}"`);
 		}
 		const condition = arr.join(' && ');
-		/* istanbul ignore else */
 		if (condition) {
 			result.push({
 				name: server.name,
 				condition: condition
 			});
+		} else {
+			defaultBackend = server.name;
 		}
 	});
 
 	const arr = [];
+	if (defaultBackend) {
+		arr.push(`set req.backend_hint = ${_.camelCase(defaultBackend)}.backend();`);
+	}
 	_.forEach(result, (item, i) => {
 		if (i === 0) {
 			arr.push(`if(${item.condition}){`);
 		} else {
 			arr.push(`}elsif(${item.condition}){`);
 		}
-		arr.push(`  set req.backend_hint = ${item.name}.backend();`);
+		arr.push(`  set req.backend_hint = ${_.camelCase(item.name)}.backend();`);
 	});
 	/* istanbul ignore else */
 	if (arr.length) {
@@ -182,9 +188,6 @@ function getVcl(config){
 		stale: '3s',
 		keep: '10s',
 		grace: '30m'
-	});
-	_.forEach(config.backends, tmp => {
-		tmp.name = _.camelCase(tmp.name);
 	});
 	return getConfig(config.backends).then(data => {
 		_.extend(config, data);
