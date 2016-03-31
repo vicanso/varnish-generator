@@ -28,6 +28,23 @@ varnishGenerator.getVcl(varnishConfig).then(vcl => {
 
 - `backends` Array [{"name": "backendname", "prefix": "url prefix", "ip": "应用IP", "port": "应用端口"}]
 
+## Check List
+
+- 首次无缓存，从backend中获取数据
+
+- 已有缓存，从缓存中读取
+
+- 无缓存，多请求并发请求，一个请求从backend获取，其它的使用第一个请求的缓存（varnish返回的请求顺序不一）
+
+- 缓存请求刚过期，在stale时效内请求，请求从缓存中读取，varnish并从backend中更新数据
+
+- 缓存已过期，则非在stale时间内请求，后面的两个并发请求都由backend返回
+
+- 不可缓存文件，从backend中获取数据
+
+
+
+
 ## License
 
 MIT

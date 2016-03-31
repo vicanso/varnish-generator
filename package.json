@@ -4,7 +4,6 @@
   "description": "generate varnish vcl file",
   "main": "index.js",
   "scripts": {
-    "pretest": "npm install",
     "test": "node ./node_modules/.bin/eslint index.js && node ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha ./test/*.js --"
   },
   "repository": {
@@ -25,7 +24,8 @@
   },
   "homepage": "https://github.com/vicanso/varnish-generator#readme",
   "devDependencies": {
-    "eslint": "^2.2.0",
+    "eslint": "^2.5.3",
+    "eslint-config-airbnb": "^6.2.0",
     "express": "^4.13.4",
     "istanbul": "^0.4.2",
     "mocha": "^2.4.5",
