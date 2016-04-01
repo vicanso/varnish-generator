@@ -73,7 +73,38 @@ function createServer(port, prefix) {
 		});
 	});
 
+	app.get('/5', (req, res) => {
+		res.set('Cache-Control', 'public, no-cache');
+		res.send({
+			now: Date.now(),
+			count: countDict[req.no],
+		});
+	});
 
+	app.get('/6', (req, res) => {
+		res.set('Cache-Control', 'public, no-cache');
+		res.send({
+			now: Date.now(),
+			count: countDict[req.no],
+		});
+	});
+
+	app.get('/7', (req, res) => {
+		res.set('Cache-Control', 'public, no-cache');
+		res.send({
+			now: Date.now(),
+			count: countDict[req.no],
+		});
+	});
+
+
+	app.get('/8', (req, res) => {
+		res.set('Cache-Control', 'public, no-cache');
+		res.send({
+			now: Date.now(),
+			count: countDict[req.no],
+		});
+	});
 
 	// app.get('/headers', (req, res) => {
 	// 	res.set('Cache-Control', 'public, max-age=1');

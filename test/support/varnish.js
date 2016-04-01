@@ -50,5 +50,3 @@ varnishGenerator.getVcl({
     console.error(`stderr:${data}`);
   });
 }).catch(err => console.error(err));
-
-
