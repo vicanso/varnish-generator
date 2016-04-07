@@ -126,11 +126,11 @@ sub vcl_recv {
 
 
 
-  /* backend selctor */
+  /* backend selector */
   set req.backend_hint = defaultBackend.backend();
-  if(req.http.host == "white" && req.url ~ "/albi"){
+  if(req.http.host == "white" && req.url ~ "^/albi"){
     set req.backend_hint = albi.backend();
-  }elsif(req.url ~ "/timtam"){
+  }elsif(req.url ~ "^/timtam"){
     set req.backend_hint = timtam.backend();
   }
   

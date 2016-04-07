@@ -64,8 +64,8 @@ sub vcl_recv {
 
 
 
-  /* backend selctor */
-  if(req.url ~ "/timtam"){
+  /* backend selector */
+  if(req.url ~ "^/timtam"){
     set req.backend_hint = timtam.backend();
   }
   

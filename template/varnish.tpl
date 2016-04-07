@@ -48,7 +48,7 @@ sub vcl_recv {
 
 
 
-  /* backend selctor */
+  /* backend selector */
 <%= selectConfig %>
   
   if (req.method != "GET" &&

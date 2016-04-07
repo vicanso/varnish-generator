@@ -132,7 +132,7 @@ function getBackendSelectConfig(serverList) {
     }
     /* istanbul ignore else */
     if (server.prefix) {
-      arr.push(`req.url ~ "${server.prefix}"`);
+      arr.push(`req.url ~ "^${server.prefix}"`);
     }
     const condition = arr.join(' && ');
     if (condition) {

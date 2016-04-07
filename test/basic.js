@@ -11,7 +11,7 @@ const backendConfig =
 const initConfig =
   'sub vcl_init{\n  new albi = directors.random();\n  albi.add_backend(albi0, 1);\n  albi.add_backend(albi1, 1);\n  new timtam = directors.random();\n  timtam.add_backend(timtam0, 1);\n  timtam.add_backend(timtam1, 1);\n  new defaultBackend = directors.random();\n  defaultBackend.add_backend(defaultBackend0, 1);\n}';
 const selectConfig =
-  '  set req.backend_hint = defaultBackend.backend();\n  if(req.http.host == "white" && req.url ~ "/albi"){\n    set req.backend_hint = albi.backend();\n  }elsif(req.url ~ "/timtam"){\n    set req.backend_hint = timtam.backend();\n  }';
+  '  set req.backend_hint = defaultBackend.backend();\n  if(req.http.host == "white" && req.url ~ "^/albi"){\n    set req.backend_hint = albi.backend();\n  }elsif(req.url ~ "^/timtam"){\n    set req.backend_hint = timtam.backend();\n  }';
 
 
 describe('varnish-config', () => {
