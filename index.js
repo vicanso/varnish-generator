@@ -1,4 +1,3 @@
-'use strict';
 const _ = require('lodash');
 const path = require('path');
 const fs = require('fs');
@@ -28,7 +27,7 @@ function readFilePromise(file) {
  */
 function sortServer(serverList) {
   let result = {};
-  _.forEach(serverList, server => {
+  _.forEach(serverList, (server) => {
     const name = server.name;
     if (!result[name]) {
       result[name] = [];
@@ -67,7 +66,7 @@ function getBackendConfig(serverList) {
   const sortedServerList = sortServer(serverList);
   return readFilePromise(path.join(__dirname,
       'template/backend.tpl'))
-    .then(tpl => {
+    .then((tpl) => {
       const template = _.template(tpl);
       const arr = [];
       _.forEach(sortedServerList, (servers) => {
@@ -95,7 +94,7 @@ function getBackendConfig(serverList) {
 function getInitConfig(serverList) {
   const sortedServerList = sortServer(serverList);
   return readFilePromise(path.join(__dirname, 'template/init.tpl'))
-    .then(tpl => {
+    .then((tpl) => {
       const template = _.template(tpl);
       const arr = [];
       _.forEach(sortedServerList, (servers) => {
@@ -174,10 +173,10 @@ function getBackendSelectConfig(serverList) {
  */
 function getConfig(serverList) {
   const data = {};
-  return getBackendConfig(serverList).then(config => {
+  return getBackendConfig(serverList).then((config) => {
     data.backendConfig = config;
     return getInitConfig(serverList);
-  }).then(config => {
+  }).then((config) => {
     data.initConfig = config;
     data.selectConfig = getBackendSelectConfig(serverList);
     return data;
@@ -199,7 +198,7 @@ function getVcl(config) {
     keep: '10s',
     grace: '30m',
   });
-  return getConfig(config.backends).then(data => {
+  return getConfig(config.backends).then((data) => {
     _.extend(config, data);
     return readFilePromise(path.join(__dirname, 'template/varnish.tpl'));
   }).then(tpl => _.template(tpl)(config));

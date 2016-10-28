@@ -243,7 +243,7 @@ sub vcl_deliver {
 
 
 
-# 自定义的一些url的处理
+# custom control
 sub custom_ctrl{
   #响应healthy检测
   if(req.url == "/ping"){
@@ -285,13 +285,12 @@ sub vcl_backend_fetch {
 sub vcl_backend_response {
   set beresp.keep = 0s;
   set beresp.grace = 0s;
-  # 若返回的内容是文本类，则压缩该数据（根据response header的Content-Type判断）
+  # the response body is text, do gzip (judge by response header Content-Type)
   if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
     set beresp.do_gzip = true;
   }
 
-  # 如果返回的数据ttl为0，设置为不可缓存
-  # 对于Set-Cookie的响应设置为不可缓存
+  # The following scenarios set uncacheable
   if (beresp.ttl <= 0s ||
     beresp.http.Set-Cookie ||
     beresp.http.Surrogate-Control ~ "no-store" ||
@@ -310,10 +309,10 @@ sub vcl_backend_response {
     set beresp.do_esi = true;
   }
 
-  # 该数据在失效之后，保存多长时间才被删除（用于在服务器down了之后，还可以提供数据给用户）
+  # Set the data how long will be remove after become invalid
+  # Use for the backend failover
   set beresp.grace = 30m;
   
-  # 缓存在过期之后保留多长时间，主要用于(If-Modified-Since / If-None-Match)
   set beresp.keep = 10s;
   return (deliver);
 }
