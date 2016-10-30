@@ -127,12 +127,12 @@ sub vcl_hit {
     return (deliver);
   }
   # backend is healthy
-  if(std.healthy(req.backend_hint)){
+  if (std.healthy(req.backend_hint)) {
     # TODO 3s should be use Cache-Control: m-stale
     if(obj.ttl + <%= stale %> > 0s){
       return (deliver);
     }
-  }else if(obj.ttl + obj.grace > 0s){
+  } else if (obj.ttl + obj.grace > 0s) {
     # Object is in grace, deliver it
     # Automatically triggers a background fetch
     return (deliver);
@@ -203,7 +203,7 @@ sub vcl_backend_response {
   set beresp.keep = 0s;
   set beresp.grace = 0s;
   # the response body is text, do gzip (judge by response header Content-Type)
-  if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
+  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
     set beresp.do_gzip = true;
   }
 
