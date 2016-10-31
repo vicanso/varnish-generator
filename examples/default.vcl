@@ -3,7 +3,7 @@ import std;
 import directors;
 
 # backend start
-backend albi0{
+backend albi0 {
   .host = "127.0.0.1";
   .port = "3020";
   .connect_timeout = 3s;
@@ -17,7 +17,7 @@ backend albi0{
     .threshold = 3;
   }
 }
-backend albi1{
+backend albi1 {
   .host = "127.0.0.1";
   .port = "3030";
   .connect_timeout = 3s;
@@ -31,7 +31,7 @@ backend albi1{
     .threshold = 3;
   }
 }
-backend timtam0{
+backend timtam0 {
   .host = "127.0.0.1";
   .port = "3000";
   .connect_timeout = 3s;
@@ -45,7 +45,7 @@ backend timtam0{
     .threshold = 3;
   }
 }
-backend timtam1{
+backend timtam1 {
   .host = "127.0.0.1";
   .port = "3010";
   .connect_timeout = 3s;
@@ -59,9 +59,9 @@ backend timtam1{
     .threshold = 3;
   }
 }
-backend defaultBackend0{
+backend defaultBackend0 {
   .host = "127.0.0.1";
-  .port = "3040";
+  .port = "8000";
   .connect_timeout = 3s;
   .first_byte_timeout = 10s;
   .between_bytes_timeout = 2s;
@@ -80,15 +80,15 @@ backend defaultBackend0{
 # Housekeeping
 
 # init start
-sub vcl_init{
-  new albi = directors.random();
-  albi.add_backend(albi0, 1);
-  albi.add_backend(albi1, 1);
-  new timtam = directors.random();
-  timtam.add_backend(timtam0, 1);
-  timtam.add_backend(timtam1, 1);
-  new defaultBackend = directors.random();
-  defaultBackend.add_backend(defaultBackend0, 1);
+sub vcl_init {
+  new albi = directors.round_robin();
+  albi.add_backend(albi0);
+  albi.add_backend(albi1);
+  new timtam = directors.round_robin();
+  timtam.add_backend(timtam0);
+  timtam.add_backend(timtam1);
+  new defaultBackend = directors.round_robin();
+  defaultBackend.add_backend(defaultBackend0);
 }
 # init end
 
@@ -101,23 +101,24 @@ sub vcl_fini {
 
 
 sub vcl_recv {
+  std.log("debug vcl_recv " + std.time2real(now, 0.0));
   call custom_ctrl;
 
   /* We do not support SPDY or HTTP/2.0 */
   if (req.method == "PRI") {
     return (synth(405));
   }
-  if(req.restarts == 0){
+  if (req.restarts == 0) {
     /* set X-Forwarded-For */
-    if(req.http.X-Forwarded-For){
+    if (req.http.X-Forwarded-For) {
       set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
-    }else{
+    } else {
       set req.http.X-Forwarded-For = client.ip;
     }
     /* set Via */
-    if(req.http.Via){
+    if (req.http.Via) {
       set req.http.Via = req.http.Via + ", varnish-test";
-    }else{
+    } else {
       set req.http.Via = "varnish-test";
     }
 
@@ -128,12 +129,12 @@ sub vcl_recv {
 
   /* backend selector */
   set req.backend_hint = defaultBackend.backend();
-  if(req.http.host == "white" && req.url ~ "^/albi"){
+  if (req.http.host == "white" && req.url ~ "^/albi") {
     set req.backend_hint = albi.backend();
-  }elsif(req.url ~ "^/timtam"){
+  } elsif (req.url ~ "^/timtam") {
     set req.backend_hint = timtam.backend();
   }
-  
+
   if (req.method != "GET" &&
     req.method != "HEAD" &&
     req.method != "PUT" &&
@@ -157,7 +158,7 @@ sub vcl_recv {
   }
 
   /* Not cacheable */
-  if(req.http.Authorization){
+  if (req.http.Authorization) {
     return (pass);
   }
 
@@ -169,14 +170,13 @@ sub vcl_recv {
   # Send Surrogate-Capability headers to announce ESI support to backend
   # set req.http.Surrogate-Capability = "key=ESI/1.0";
 
-  # all requst should be cacheable, so we remove cookie
-  unset req.http.Cookie;
   return (hash);
 }
 
 
 sub vcl_pipe {
-  if(req.http.upgrade){
+  std.log("debug vcl_pipe " + std.time2real(now, 0.0));
+  if (req.http.upgrade) {
     set bereq.http.upgrade = req.http.upgrade;
   }
   return (pipe);
@@ -184,15 +184,19 @@ sub vcl_pipe {
 
 
 sub vcl_pass {
+  std.log("debug vcl_pass " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
   return (fetch);
 }
 
 
 sub vcl_hash{
+  std.log("debug vcl_hash " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
   hash_data(req.url);
-  if(req.http.host){
+  if (req.http.host) {
     hash_data(req.http.host);
-  }else{
+  } else {
     hash_data(server.ip);
   }
   return (lookup);
@@ -200,44 +204,52 @@ sub vcl_hash{
 
 
 sub vcl_purge {
+  std.log("debug vcl_purge " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
   return (synth(200, "Purged"));
 }
 
 
 sub vcl_hit {
+  std.log("debug vcl_hit " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
   if (obj.ttl >= 0s) {
     # A pure unadultered hit, deliver it
     return (deliver);
   }
   # backend is healthy
-  if(std.healthy(req.backend_hint)){
+  if (std.healthy(req.backend_hint)) {
     # TODO 3s should be use Cache-Control: m-stale
     if(obj.ttl + 3s > 0s){
       return (deliver);
     }
-  }else if(obj.ttl + obj.grace > 0s){
+  } else if (obj.ttl + obj.grace > 0s) {
     # Object is in grace, deliver it
     # Automatically triggers a background fetch
     return (deliver);
   }
 
+  # fetch & deliver once we get the result
   return (miss);
 }
 
 
 sub vcl_miss {
+  std.log("debug vcl_miss " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
   return (fetch);
 }
 
 
 sub vcl_deliver {
+  std.log("debug vcl_deliver " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
   # Happens when we have all the pieces we need, and are about to send the
   # response to the client.
   #
   # You can do accounting or modifying the final object here.
-  unset resp.http.Via;
   set resp.http.X-Hits = obj.hits;
-  set resp.http.X-Varnish-Times = std.time2real(now, 0.0) + ", " + req.http.X-Varnish-StartedAt;
+  set resp.http.X-Varnish-Times = req.http.X-Varnish-StartedAt + ", " + std.time2real(now, 0.0);
   return (deliver);
 }
 
@@ -259,6 +271,8 @@ sub custom_ctrl{
 
 
 sub vcl_synth {
+  std.log("debug vcl_synth " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
@@ -277,16 +291,24 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
+  std.log("debug vcl_backend_fetch " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
+  if (bereq.method == "GET") {
+    unset bereq.body;
+  }
   return (fetch);
 }
 
 
 
 sub vcl_backend_response {
-  set beresp.keep = 0s;
-  set beresp.grace = 0s;
+  std.log("debug vcl_response " + std.time2real(now, 0.0));
+  std.time2real(now, 0.0);
+  if (bereq.uncacheable) {
+    return (deliver);
+  }
   # the response body is text, do gzip (judge by response header Content-Type)
-  if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
+  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
     set beresp.do_gzip = true;
   }
 
@@ -300,6 +322,8 @@ sub vcl_backend_response {
     # Hit-For-Pass
     set beresp.uncacheable = true;
     set beresp.ttl = 120s;
+    set beresp.keep = 0s;
+    set beresp.grace = 0s;
     return (deliver);
   }
 
@@ -309,14 +333,8 @@ sub vcl_backend_response {
     set beresp.do_esi = true;
   }
 
-  # Set the data how long will be remove after become invalid
-  # Use for the backend failover
-  set beresp.grace = 30m;
-  
+
+  # Objects with ttl expired but with keep time left may be used to issue conditional (If-Modified-Since / If-None-Match) requests to the backend to refresh them.
   set beresp.keep = 10s;
   return (deliver);
 }
-
-
-
-

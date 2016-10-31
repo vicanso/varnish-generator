@@ -91,7 +91,7 @@ function getBackendConfig(serverList) {
  * @param  {[type]} serverList [description]
  * @return {[type]}            [description]
  */
-function getInitConfig(serverList) {
+function getInitConfig(serverList, director) {
   const sortedServerList = sortServer(serverList);
   return readFilePromise(path.join(__dirname, 'template/init.tpl'))
     .then((tpl) => {
@@ -99,9 +99,14 @@ function getInitConfig(serverList) {
       const arr = [];
       _.forEach(sortedServerList, (servers) => {
         const name = _.camelCase(servers[0].name);
-        arr.push(`new ${name} = directors.random();`);
+        const type = director || 'round_robin';
+        arr.push(`new ${name} = directors.${type}();`);
         _.forEach(servers, (server, i) => {
-          arr.push(`${name}.add_backend(${name + i}, ${server.weight || 1});`);
+          if (type === 'random') {
+            arr.push(`${name}.add_backend(${name + i}, ${server.weight || 1});`);
+          } else {
+            arr.push(`${name}.add_backend(${name + i});`);
+          }
         });
       });
       _.forEach(arr, (tmp, i) => {
@@ -150,9 +155,9 @@ function getBackendSelectConfig(serverList) {
   }
   _.forEach(result, (item, i) => {
     if (i === 0) {
-      arr.push(`if(${item.condition}){`);
+      arr.push(`if (${item.condition}) {`);
     } else {
-      arr.push(`}elsif(${item.condition}){`);
+      arr.push(`} elsif (${item.condition}) {`);
     }
     arr.push(`  set req.backend_hint = ${_.camelCase(item.name)}.backend();`);
   });
@@ -171,11 +176,11 @@ function getBackendSelectConfig(serverList) {
  * @param  {[type]} serverList [description]
  * @return {[type]}            [description]
  */
-function getConfig(serverList) {
+function getConfig(serverList, director) {
   const data = {};
   return getBackendConfig(serverList).then((config) => {
     data.backendConfig = config;
-    return getInitConfig(serverList);
+    return getInitConfig(serverList, director);
   }).then((config) => {
     data.initConfig = config;
     data.selectConfig = getBackendSelectConfig(serverList);
@@ -198,7 +203,7 @@ function getVcl(config) {
     keep: '10s',
     grace: '30m',
   });
-  return getConfig(config.backends).then((data) => {
+  return getConfig(config.backends, config.director).then((data) => {
     _.extend(config, data);
     return readFilePromise(path.join(__dirname, 'template/varnish.tpl'));
   }).then(tpl => _.template(tpl)(config));

@@ -29,17 +29,17 @@ sub vcl_recv {
   if (req.method == "PRI") {
     return (synth(405));
   }
-  if(req.restarts == 0){
+  if (req.restarts == 0) {
     /* set X-Forwarded-For */
-    if(req.http.X-Forwarded-For){
+    if (req.http.X-Forwarded-For) {
       set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
-    }else{
+    } else {
       set req.http.X-Forwarded-For = client.ip;
     }
     /* set Via */
-    if(req.http.Via){
+    if (req.http.Via) {
       set req.http.Via = req.http.Via + ", <%= name %>";
-    }else{
+    } else {
       set req.http.Via = "<%= name %>";
     }
 
@@ -74,7 +74,7 @@ sub vcl_recv {
   }
 
   /* Not cacheable */
-  if(req.http.Authorization){
+  if (req.http.Authorization) {
     return (pass);
   }
 
@@ -86,14 +86,12 @@ sub vcl_recv {
   # Send Surrogate-Capability headers to announce ESI support to backend
   # set req.http.Surrogate-Capability = "key=ESI/1.0";
 
-  # all requst should be cacheable, so we remove cookie
-  unset req.http.Cookie;
   return (hash);
 }
 
 
 sub vcl_pipe {
-  if(req.http.upgrade){
+  if (req.http.upgrade) {
     set bereq.http.upgrade = req.http.upgrade;
   }
   return (pipe);
@@ -107,9 +105,9 @@ sub vcl_pass {
 
 sub vcl_hash{
   hash_data(req.url);
-  if(req.http.host){
+  if (req.http.host) {
     hash_data(req.http.host);
-  }else{
+  } else {
     hash_data(server.ip);
   }
   return (lookup);
@@ -138,6 +136,7 @@ sub vcl_hit {
     return (deliver);
   }
 
+  # fetch & deliver once we get the result  
   return (miss);
 }
 
@@ -152,9 +151,8 @@ sub vcl_deliver {
   # response to the client.
   #
   # You can do accounting or modifying the final object here.
-  unset resp.http.Via;
   set resp.http.X-Hits = obj.hits;
-  set resp.http.X-Varnish-Times = std.time2real(now, 0.0) + ", " + req.http.X-Varnish-StartedAt;
+  set resp.http.X-Varnish-Times = req.http.X-Varnish-StartedAt + ", " + std.time2real(now, 0.0);
   return (deliver);
 }
 
@@ -194,14 +192,18 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
+  if (bereq.method == "GET") {
+    unset bereq.body;
+  }
   return (fetch);
 }
 
 
 
 sub vcl_backend_response {
-  set beresp.keep = 0s;
-  set beresp.grace = 0s;
+  if (bereq.uncacheable) {
+    return (deliver);
+  }
   # the response body is text, do gzip (judge by response header Content-Type)
   if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
     set beresp.do_gzip = true;
@@ -217,6 +219,8 @@ sub vcl_backend_response {
     # Hit-For-Pass
     set beresp.uncacheable = true;
     set beresp.ttl = 120s;
+    set beresp.keep = 0s;
+    set beresp.grace = 0s;
     return (deliver);
   }
 
@@ -225,15 +229,9 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
-
-  # Set the data how long will be remove after become invalid
-  # Use for the backend failover
-  set beresp.grace = <%= grace %>;
   
+  
+  # Objects with ttl expired but with keep time left may be used to issue conditional (If-Modified-Since / If-None-Match) requests to the backend to refresh them.
   set beresp.keep = <%= keep %>;
   return (deliver);
 }
-
-
-
-

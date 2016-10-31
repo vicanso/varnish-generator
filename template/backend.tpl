@@ -1,4 +1,4 @@
-backend <%= name %>{
+backend <%= name %> {
   .host = "<%= ip %>";
   .port = "<%= port %>";
   .connect_timeout = 3s;
