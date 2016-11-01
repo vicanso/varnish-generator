@@ -101,7 +101,6 @@ sub vcl_fini {
 
 
 sub vcl_recv {
-  std.log("debug vcl_recv " + std.time2real(now, 0.0));
   call custom_ctrl;
 
   /* We do not support SPDY or HTTP/2.0 */
@@ -134,7 +133,7 @@ sub vcl_recv {
   } elsif (req.url ~ "^/timtam") {
     set req.backend_hint = timtam.backend();
   }
-
+  
   if (req.method != "GET" &&
     req.method != "HEAD" &&
     req.method != "PUT" &&
@@ -175,7 +174,6 @@ sub vcl_recv {
 
 
 sub vcl_pipe {
-  std.log("debug vcl_pipe " + std.time2real(now, 0.0));
   if (req.http.upgrade) {
     set bereq.http.upgrade = req.http.upgrade;
   }
@@ -184,15 +182,11 @@ sub vcl_pipe {
 
 
 sub vcl_pass {
-  std.log("debug vcl_pass " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   return (fetch);
 }
 
 
 sub vcl_hash{
-  std.log("debug vcl_hash " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   hash_data(req.url);
   if (req.http.host) {
     hash_data(req.http.host);
@@ -204,15 +198,11 @@ sub vcl_hash{
 
 
 sub vcl_purge {
-  std.log("debug vcl_purge " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   return (synth(200, "Purged"));
 }
 
 
 sub vcl_hit {
-  std.log("debug vcl_hit " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   if (obj.ttl >= 0s) {
     # A pure unadultered hit, deliver it
     return (deliver);
@@ -229,21 +219,17 @@ sub vcl_hit {
     return (deliver);
   }
 
-  # fetch & deliver once we get the result
+  # fetch & deliver once we get the result  
   return (miss);
 }
 
 
 sub vcl_miss {
-  std.log("debug vcl_miss " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   return (fetch);
 }
 
 
 sub vcl_deliver {
-  std.log("debug vcl_deliver " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   # Happens when we have all the pieces we need, and are about to send the
   # response to the client.
   #
@@ -271,8 +257,6 @@ sub custom_ctrl{
 
 
 sub vcl_synth {
-  std.log("debug vcl_synth " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
@@ -291,8 +275,6 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
-  std.log("debug vcl_backend_fetch " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   if (bereq.method == "GET") {
     unset bereq.body;
   }
@@ -302,8 +284,6 @@ sub vcl_backend_fetch {
 
 
 sub vcl_backend_response {
-  std.log("debug vcl_response " + std.time2real(now, 0.0));
-  std.time2real(now, 0.0);
   if (bereq.uncacheable) {
     return (deliver);
   }
@@ -332,8 +312,8 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
-
-
+  
+  
   # Objects with ttl expired but with keep time left may be used to issue conditional (If-Modified-Since / If-None-Match) requests to the backend to refresh them.
   set beresp.keep = 10s;
   return (deliver);

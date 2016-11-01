@@ -3,9 +3,65 @@ import std;
 import directors;
 
 # backend start
-backend timtam0{
+backend albi0 {
+  .host = "127.0.0.1";
+  .port = "3020";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend albi1 {
+  .host = "127.0.0.1";
+  .port = "3030";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend timtam0 {
   .host = "127.0.0.1";
   .port = "3000";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend timtam1 {
+  .host = "127.0.0.1";
+  .port = "3010";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend defaultBackend0 {
+  .host = "127.0.0.1";
+  .port = "8000";
   .connect_timeout = 3s;
   .first_byte_timeout = 10s;
   .between_bytes_timeout = 2s;
@@ -24,9 +80,15 @@ backend timtam0{
 # Housekeeping
 
 # init start
-sub vcl_init{
-  new timtam = directors.random();
-  timtam.add_backend(timtam0, 1);
+sub vcl_init {
+  new albi = directors.round_robin();
+  albi.add_backend(albi0);
+  albi.add_backend(albi1);
+  new timtam = directors.round_robin();
+  timtam.add_backend(timtam0);
+  timtam.add_backend(timtam1);
+  new defaultBackend = directors.round_robin();
+  defaultBackend.add_backend(defaultBackend0);
 }
 # init end
 
@@ -45,17 +107,17 @@ sub vcl_recv {
   if (req.method == "PRI") {
     return (synth(405));
   }
-  if(req.restarts == 0){
+  if (req.restarts == 0) {
     /* set X-Forwarded-For */
-    if(req.http.X-Forwarded-For){
+    if (req.http.X-Forwarded-For) {
       set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
-    }else{
+    } else {
       set req.http.X-Forwarded-For = client.ip;
     }
     /* set Via */
-    if(req.http.Via){
+    if (req.http.Via) {
       set req.http.Via = req.http.Via + ", varnish-test";
-    }else{
+    } else {
       set req.http.Via = "varnish-test";
     }
 
@@ -65,7 +127,10 @@ sub vcl_recv {
 
 
   /* backend selector */
-  if(req.url ~ "^/timtam"){
+  set req.backend_hint = defaultBackend.backend();
+  if (req.http.host == "white" && req.url ~ "^/albi") {
+    set req.backend_hint = albi.backend();
+  } elsif (req.url ~ "^/timtam") {
     set req.backend_hint = timtam.backend();
   }
   
@@ -92,7 +157,7 @@ sub vcl_recv {
   }
 
   /* Not cacheable */
-  if(req.http.Authorization){
+  if (req.http.Authorization) {
     return (pass);
   }
 
@@ -104,14 +169,12 @@ sub vcl_recv {
   # Send Surrogate-Capability headers to announce ESI support to backend
   # set req.http.Surrogate-Capability = "key=ESI/1.0";
 
-  # all requst should be cacheable, so we remove cookie
-  unset req.http.Cookie;
   return (hash);
 }
 
 
 sub vcl_pipe {
-  if(req.http.upgrade){
+  if (req.http.upgrade) {
     set bereq.http.upgrade = req.http.upgrade;
   }
   return (pipe);
@@ -125,9 +188,9 @@ sub vcl_pass {
 
 sub vcl_hash{
   hash_data(req.url);
-  if(req.http.host){
+  if (req.http.host) {
     hash_data(req.http.host);
-  }else{
+  } else {
     hash_data(server.ip);
   }
   return (lookup);
@@ -145,17 +208,18 @@ sub vcl_hit {
     return (deliver);
   }
   # backend is healthy
-  if(std.healthy(req.backend_hint)){
+  if (std.healthy(req.backend_hint)) {
     # TODO 3s should be use Cache-Control: m-stale
     if(obj.ttl + 3s > 0s){
       return (deliver);
     }
-  }else if(obj.ttl + obj.grace > 0s){
+  } else if (obj.ttl + obj.grace > 0s) {
     # Object is in grace, deliver it
     # Automatically triggers a background fetch
     return (deliver);
   }
 
+  # fetch & deliver once we get the result  
   return (miss);
 }
 
@@ -170,15 +234,14 @@ sub vcl_deliver {
   # response to the client.
   #
   # You can do accounting or modifying the final object here.
-  unset resp.http.Via;
   set resp.http.X-Hits = obj.hits;
-  set resp.http.X-Varnish-Times = std.time2real(now, 0.0) + ", " + req.http.X-Varnish-StartedAt;
+  set resp.http.X-Varnish-Times = req.http.X-Varnish-StartedAt + ", " + std.time2real(now, 0.0);
   return (deliver);
 }
 
 
 
-# 自定义的一些url的处理
+# custom control
 sub custom_ctrl{
   #响应healthy检测
   if(req.url == "/ping"){
@@ -212,21 +275,24 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
+  if (bereq.method == "GET") {
+    unset bereq.body;
+  }
   return (fetch);
 }
 
 
 
 sub vcl_backend_response {
-  set beresp.keep = 0s;
-  set beresp.grace = 0s;
-  # 若返回的内容是文本类，则压缩该数据（根据response header的Content-Type判断）
-  if(beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json"){
+  if (bereq.uncacheable) {
+    return (deliver);
+  }
+  # the response body is text, do gzip (judge by response header Content-Type)
+  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
     set beresp.do_gzip = true;
   }
 
-  # 如果返回的数据ttl为0，设置为不可缓存
-  # 对于Set-Cookie的响应设置为不可缓存
+  # The following scenarios set uncacheable
   if (beresp.ttl <= 0s ||
     beresp.http.Set-Cookie ||
     beresp.http.Surrogate-Control ~ "no-store" ||
@@ -236,6 +302,8 @@ sub vcl_backend_response {
     # Hit-For-Pass
     set beresp.uncacheable = true;
     set beresp.ttl = 120s;
+    set beresp.keep = 0s;
+    set beresp.grace = 0s;
     return (deliver);
   }
 
@@ -244,15 +312,9 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
-
-  # 该数据在失效之后，保存多长时间才被删除（用于在服务器down了之后，还可以提供数据给用户）
-  set beresp.grace = 30m;
   
-  # 缓存在过期之后保留多长时间，主要用于(If-Modified-Since / If-None-Match)
+  
+  # Objects with ttl expired but with keep time left may be used to issue conditional (If-Modified-Since / If-None-Match) requests to the backend to refresh them.
   set beresp.keep = 10s;
   return (deliver);
 }
-
-
-
-

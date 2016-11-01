@@ -17,13 +17,16 @@ router.get('/no-cache', (ctx) => {
   ctx.body = 'Hello World';
 });
 
-router.get('/40x', (ctx) => {
+router.get('/400', (ctx) => {
   ctx.set('Cache-Control', 'public, max-age=10');
-  ctx.status = 404;
+  ctx.status = 400;
+  ctx.body = 'Hello World';
 });
 
-router.get('/50x', (ctx) => {
+router.get('/500', (ctx) => {
+  ctx.set('Cache-Control', 'public, max-age=10');
   ctx.status = 500;
+  ctx.body = 'Hello World';
 });
 
 router.get('/set-cookie', (ctx) => {
@@ -36,7 +39,7 @@ router.post('/post', (ctx) => {
   ctx.body = {};
 });
 
-app
+const server = app
   .use((ctx, next) => {
     console.info(ctx.url);
     return next();
@@ -46,3 +49,5 @@ app
   .listen(8000);
 
 console.info('server listen on 8000');
+
+module.exports = server;

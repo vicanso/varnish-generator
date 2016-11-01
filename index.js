@@ -1,6 +1,9 @@
 const _ = require('lodash');
 const path = require('path');
 const fs = require('fs');
+const program = require('commander');
+
+const pkg = require('./package');
 
 /**
  * [readFilePromise description]
@@ -15,6 +18,19 @@ function readFilePromise(file) {
         reject(err);
       } else {
         resolve(data);
+      }
+    });
+  });
+}
+
+/* istanbul ignore next */
+function writeFilePromise(file, data) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(file, data, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
       }
     });
   });
@@ -209,9 +225,36 @@ function getVcl(config) {
   }).then(tpl => _.template(tpl)(config));
 }
 
+/* istanbul ignore next */
+function run() {
+  if (!program.config) {
+    throw new Error('the config option can not be null');
+  }
+  readFilePromise(path.join(process.cwd(), program.config))
+    .then(data => getVcl(JSON.parse(data)))
+    .then((vcl) => {
+      if (!program.target) {
+        console.info(vcl);
+        return Promise.resolve();
+      }
+      return writeFilePromise(path.join(process.cwd(), program.target), vcl);
+    })
+    .then(() => console.info('create varnish vcl success'))
+    .catch(console.error);
+}
+
 
 exports.getBackendConfig = getBackendConfig;
 exports.getInitConfig = getInitConfig;
 exports.getBackendSelectConfig = getBackendSelectConfig;
 exports.getConfig = getConfig;
 exports.getVcl = getVcl;
+
+if (process.mainModule === module) {
+  program
+    .version(pkg.version)
+    .option('-c, --config <n>', 'Config file, relative to process.cwd()')
+    .option('-t, --target <n>', 'The path for vcl')
+    .parse(process.argv);
+  run();
+}
