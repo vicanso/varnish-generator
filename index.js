@@ -179,7 +179,9 @@ function getBackendSelectConfig(serverList) {
   });
   /* istanbul ignore else */
   if (arr.length) {
-    arr.push('}');
+    if (arr.length > 1) {
+      arr.push('}');
+    }
     _.forEach(arr, (tmp, i) => {
       arr[i] = `  ${tmp}`;
     });
