@@ -216,15 +216,13 @@ function getVcl(config) {
   if (!config.backends || !config.name || !config.version) {
     throw new Error('backends, name and version can not be null');
   }
-  _.extend(config, {
-    stale: '3s',
-    keep: '10s',
-    grace: '30m',
-  });
-  return getConfig(config.backends, config.director).then((data) => {
-    _.extend(config, data);
+  const cloneConfig = _.extend({
+    stale: '3',
+  }, config);
+  return getConfig(cloneConfig.backends, cloneConfig.director).then((data) => {
+    _.extend(cloneConfig, data);
     return readFilePromise(path.join(__dirname, 'template/varnish.tpl'));
-  }).then(tpl => _.template(tpl)(config));
+  }).then(tpl => _.template(tpl)(cloneConfig));
 }
 
 /* istanbul ignore next */

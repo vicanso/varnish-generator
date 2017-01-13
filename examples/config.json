@@ -1,6 +1,5 @@
 {
-  "stale": "2s",
-  "keep": "5s",
+  "stale": "2",
   "director": "round_robin",
   "backends": [
     {
