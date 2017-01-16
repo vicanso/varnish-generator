@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "generate varnish vcl file",
   "main": "index.js",
+  "bin": {
+    "varnish-generator": "./bin/varnish-generator"
+  },
   "scripts": {
     "test": "node ./node_modules/.bin/eslint index.js && node ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha ./test/*.js --"
   },
@@ -33,10 +36,10 @@
     "koa": "^2.0.0-alpha.7",
     "koa-router": "^7.0.1",
     "mocha": "^3.1.2",
-    "superagent": "^2.3.0"
+    "superagent": "^3.3.2"
   },
   "dependencies": {
     "commander": "^2.9.0",
-    "lodash": "^4.16.4"
+    "lodash": "^4.17.4"
   }
 }

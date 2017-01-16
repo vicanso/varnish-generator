@@ -1,9 +1,7 @@
 const _ = require('lodash');
 const path = require('path');
 const fs = require('fs');
-const program = require('commander');
 
-const pkg = require('./package');
 
 /**
  * [readFilePromise description]
@@ -213,8 +211,14 @@ function getConfig(serverList, director) {
  */
 function getVcl(config) {
   /* istanbul ignore if */
-  if (!config.backends || !config.name || !config.version) {
-    throw new Error('backends, name and version can not be null');
+  if (!config.backends || !config.name ) {
+    throw new Error('backends, name can not be null');
+  }
+  if (!config.version) {
+    config.version = new Date().toISOString();
+  }
+  if (!config.updatedAt) {
+    config.updatedAt = [new Date().toISOString()];
   }
   const cloneConfig = _.extend({
     stale: '3',
@@ -225,36 +229,15 @@ function getVcl(config) {
   }).then(tpl => _.template(tpl)(cloneConfig));
 }
 
-/* istanbul ignore next */
-function run() {
-  if (!program.config) {
-    throw new Error('the config option can not be null');
-  }
-  readFilePromise(path.join(process.cwd(), program.config))
-    .then(data => getVcl(JSON.parse(data)))
-    .then((vcl) => {
-      if (!program.target) {
-        console.info(vcl);
-        return Promise.resolve();
-      }
-      return writeFilePromise(path.join(process.cwd(), program.target), vcl);
-    })
-    .then(() => console.info('create varnish vcl success'))
-    .catch(console.error);
+function getVclFromFile(file) {
+  return readFilePromise(file)
+    .then(data => getVcl(JSON.parse(data)));
 }
-
 
 exports.getBackendConfig = getBackendConfig;
 exports.getInitConfig = getInitConfig;
 exports.getBackendSelectConfig = getBackendSelectConfig;
 exports.getConfig = getConfig;
 exports.getVcl = getVcl;
-
-if (process.mainModule === module) {
-  program
-    .version(pkg.version)
-    .option('-c, --config <n>', 'Config file, relative to process.cwd()')
-    .option('-t, --target <n>', 'The path for vcl')
-    .parse(process.argv);
-  run();
-}
+exports.getVclFromFile = getVclFromFile;
+exports.writeVclToFile = writeFilePromise;
