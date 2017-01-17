@@ -107,7 +107,7 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 
 ## How to use varnish better?
 
-View my [./default.vcl](example) of varnish vcl.
+View my [example](./default.vcl) of varnish vcl.
 
 在使用varnish，我按照以下规则，
 
@@ -119,7 +119,7 @@ View my [./default.vcl](example) of varnish vcl.
 
 ### How the cache of varnish is created?
 
-![](assets/cache_req_fsm.svg)
+![](./assets/cache_req_fsm.svg)
 
 ### RFC2616_Ttl
 
