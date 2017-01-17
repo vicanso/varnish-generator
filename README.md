@@ -3,87 +3,129 @@
 ## Installation
 
 ```bash
-$ npm install varnish-generator
+$ npm install varnish-generator -g
 ```
 
 ## RUN
 
 ```bash
-cd varnish-generator
-node index.js -c ./examples/config.json -t ./examples/default.vcl
+varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 ```
 
-## API
-
-```js
-const varnishConfig = require('./config.json');
-const varnishGenerator = require('varnish-generator');
-varnishGenerator.getVcl(varnishConfig).then((vcl) => {
-	console.info(vcl);
-}).catch((err) => {
-	console.error(err);
-});
-```
 ### varnishConfig
 
-- `director` director选择backend的方式，默认为 `round_robin`
+- `name` The varnish instance's name
 
-- `stale` 当varnish缓存过期之后多长时间还可用于返回，默认是`3s`
+- `stale` The seconds of stale, default is 3
 
-- `keep` 缓存过期之后，数据在过期多长时间可用于 If-Modified-Since / If-None-Match，默认是`10s`
+- `directors` Director list, Array
 
-- `backends` Array [{"name": "backendname", "prefix": "url prefix", "ip": "应用IP", "port": "应用端口"}]
+- `directors.name` The director's name
 
+- `directors.prefix` The prefix of the url for the director, optional
+
+- `directors.host` The host for the director, optional
+
+- `directors.type` The algorithm of load balance, it can be 'fallback', 'hash', 'random', 'round_robin'. The default is 'round_robin'
+
+- `directors.backends` The backend list, Array
+
+- `directors.backends.ip` The ip of backend
+
+- `directors.backends.port` The port of backend
+
+- ``directors.backends.weight` The weight of backend, it's used for `random` and `hash`
 
 ```json
 {
-  "stale": "2s",
-  "keep": "5s",
-  "director": "round_robin",
-  "backends": [
-    {
-      "name": "timtam",
-      "prefix": "/timtam",
-      "ip": "127.0.0.1",
-      "port": 3000
-    },
-    {
-      "name": "timtam",
-      "prefix": "/timtam",
-      "ip": "127.0.0.1",
-      "port": 3010
-    },
-    {
-      "name": "albi",
-      "host": "white",
-      "prefix": "/albi",
-      "ip": "127.0.0.1",
-      "port": 3020
-    },
-    {
-      "name": "albi",
-      "host": "white",
-      "prefix": "/albi",
-      "ip": "127.0.0.1",
-      "port": 3030
-    },
-    {
-      "name": "default-backend",
-      "ip": "127.0.0.1",
-      "port": 8000
-    }
-  ],
   "name": "varnish-test",
-  "version": "2016-01-27",
-  "updatedAt": ["2016-01-27"]
+  "stale": 2,
+  "directors": [
+    {
+      "name": "timtam",
+      "prefix": "/timtam",
+      "director": "fallback",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 3000
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 3010
+        }
+      ]
+    },
+    {
+      "name": "dcharts",
+      "prefix": "/dcharts",
+      "host": "dcharts.com",
+      "director": "hash",
+      "hashKey": "req.http.cookie",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 3020,
+          "weight": 5
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 3030,
+          "weight": 3
+        }
+      ]
+    },
+    {
+      "name": "vicanso",
+      "host": "vicanso.com",
+      "director": "random",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 3040,
+          "weight": 10
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 3050,
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "name": "aslant",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 8000
+        }
+      ]
+    }
+  ]
 }
 ```
 
-## varnish 的缓存生成
+## How to use varnish better?
+
+View my [./default.vcl](example) of varnish vcl.
+
+在使用varnish，我按照以下规则，
+
+- 设置`default ttl`为0
+
+- 缓存ttl通过后端响应`Cache-Control`来设置
+
+- 不可缓存的请求通过`Cache-Control`来控制，或者请求时增加`Cache-Control:no-cache`参数，不通过配置特定url的方式来调整（简化varnish的配置，可以在所有项目共用）
+
+### How the cache of varnish is created?
 
 ![](assets/cache_req_fsm.svg)
 
-首先先来看一下`varnish`源代码中对于Cache TTL的生成，以及几个默认的配置值
+### RFC2616_Ttl
+
+
+
+At first, let me show how the `varnish cache ttl` is created and the default setting,
 
 - `default_grace` 10.000s
 
@@ -91,21 +133,19 @@ varnishGenerator.getVcl(varnishConfig).then((vcl) => {
 
 - `default_ttl` 120.000s
 
-### RFC2616_Ttl
-
 [View the code](RFC2616_Ttl.md)
 
-- status: 302、307 如果有设置`Cache-Control`或者`Expires`，则解析该字段做为缓存时效，或者为`-1`
+- HTTP status code is `302` or `307`, get the ttl from `Cache-Control` or `Expires`, otherwise is `-1`
 
-- status: 202、203、204、300、301、304、404、410、414 如果有设置`Cache-Control`或者`Expires`，则解析该字段做为缓存时效，否则为`default ttl`
+- HTTP status code is `202`, `203`, `204`, `300`, `301`, `304`, `404`, `410`, `414`, get the ttl from `Cache-Control` or `Expires`, otherwise is `default ttl`
 
-- 其它的缓存都设置为不缓存`-1`
+- Otherwise is `-1`
 
 ### Cache Grace
 
-- 使用配置的默认 grace
+- The ttl is >= 0 , get the grace from field `stale-while-revalidate` of the response `Cache-Control` header
 
-- 如果`Response`返回的`Cache-Control`有设置stale-while-revalidate，则使用该值
+- Otherwise use the default grace
 
 
 而我自己在使用`varnish`的实践中，发现有些时间客户没有控制好缓存的配置，因此我是选择设置`default_ttl`为0，Cache TTL 由backend返回的Cache-Control控制。我自己使用的`varnish`配置，主要通过以下的情况
@@ -148,7 +188,7 @@ varnishGenerator.getVcl(varnishConfig).then((vcl) => {
 根据配置好的`default.vcl`，启动`varnishd`，以及启动测试 server
 
 ```bash
-varnishd -f ~/github/varnish-generator/examples/default.vcl -a :8001 -p default_ttl=0 -p default_grace=60 -F
+varnishd -f ~/github/varnish-generator/examples/default.vcl -t -1 -p default_grace=1800 -p default_keep=10 -a :8001 -F
 
 node test/support/server
 ```
@@ -157,7 +197,7 @@ node test/support/server
 
 - POST/PUT等请求 `vcl_recv` --> `vcl_hash` --> `vcl_pass` --> `vcl_backend_fetch` --> `vcl_response` --> `vcl_deliver`
 
-- 请求关中Cache-Control:no-cache或者url中query参数带有cache=false `vcl_recv` --> `vcl_hash` --> `vcl_pass` --> `vcl_backend_fetch` --> `vcl_response` --> `vcl_deliver`
+- 请求头中Cache-Control:no-cache或者url中query参数带有cache=false `vcl_recv` --> `vcl_hash` --> `vcl_pass` --> `vcl_backend_fetch` --> `vcl_response` --> `vcl_deliver`
 
 - HTTP Status 不属于 202、203、204、300、301、302、304、307、404、410、414，响应头设置Cache-Control也无用 `vcl_recv` --> `vcl_hash` --> `vcl_miss` --> `vcl_backend_fetch` --> `vcl_response` --> `vcl_deliver`
 

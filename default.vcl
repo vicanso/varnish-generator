@@ -4,7 +4,7 @@ import std;
 import directors;
 
 # backend start
-backend albi0 {
+backend dcharts0 {
   .host = "127.0.0.1";
   .port = "3020";
   .connect_timeout = 3s;
@@ -18,9 +18,37 @@ backend albi0 {
     .threshold = 3;
   }
 }
-backend albi1 {
+backend dcharts1 {
   .host = "127.0.0.1";
   .port = "3030";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend vicanso0 {
+  .host = "127.0.0.1";
+  .port = "3040";
+  .connect_timeout = 3s;
+  .first_byte_timeout = 10s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+backend vicanso1 {
+  .host = "127.0.0.1";
+  .port = "3050";
   .connect_timeout = 3s;
   .first_byte_timeout = 10s;
   .between_bytes_timeout = 2s;
@@ -60,7 +88,7 @@ backend timtam1 {
     .threshold = 3;
   }
 }
-backend defaultBackend0 {
+backend aslant0 {
   .host = "127.0.0.1";
   .port = "8000";
   .connect_timeout = 3s;
@@ -82,14 +110,17 @@ backend defaultBackend0 {
 
 # init start
 sub vcl_init {
-  new albi = directors.round_robin();
-  albi.add_backend(albi0);
-  albi.add_backend(albi1);
-  new timtam = directors.round_robin();
+  new dcharts = directors.hash();
+  dcharts.add_backend(dcharts0, 5);
+  dcharts.add_backend(dcharts1, 3);
+  new vicanso = directors.random();
+  vicanso.add_backend(vicanso0, 10);
+  vicanso.add_backend(vicanso1, 5);
+  new timtam = directors.fallback();
   timtam.add_backend(timtam0);
   timtam.add_backend(timtam1);
-  new defaultBackend = directors.round_robin();
-  defaultBackend.add_backend(defaultBackend0);
+  new aslant = directors.round_robin();
+  aslant.add_backend(aslant0);
 }
 # init end
 
@@ -128,9 +159,11 @@ sub vcl_recv {
 
 
   /* backend selector */
-  set req.backend_hint = defaultBackend.backend();
-  if (req.http.host == "white" && req.url ~ "^/albi") {
-    set req.backend_hint = albi.backend();
+  set req.backend_hint = aslant.backend();
+  if (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {
+    set req.backend_hint = dcharts.backend(req.url);
+  } elsif (req.http.host == "vicanso.com") {
+    set req.backend_hint = vicanso.backend();
   } elsif (req.url ~ "^/timtam") {
     set req.backend_hint = timtam.backend();
   }
@@ -259,7 +292,7 @@ sub custom_ctrl{
   if(req.url == "/varnish/version") {
     return(synth(702));
   }
-  if(req.url == "/varnish/updated-time") {
+  if(req.url == "/varnish/update-history") {
     return(synth(703));
   }
 }
@@ -269,9 +302,9 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-01-16T13:14:47.987Z");
+    synthetic("2017-01-17T09:42:47.341Z");
   } elsif(resp.status == 703){
-    synthetic("2017-01-16T13:14:47.987Z");
+    synthetic("2017-01-17T09:42:47.341Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

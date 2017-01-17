@@ -1,38 +1,66 @@
 {
-  "stale": "2",
-  "director": "round_robin",
-  "backends": [
+  "name": "varnish-test",
+  "stale": 2,
+  "directors": [
     {
       "name": "timtam",
       "prefix": "/timtam",
-      "ip": "127.0.0.1",
-      "port": 3000
+      "type": "fallback",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 3000
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 3010
+        }
+      ]
     },
     {
-      "name": "timtam",
-      "prefix": "/timtam",
-      "ip": "127.0.0.1",
-      "port": 3010
+      "name": "dcharts",
+      "prefix": "/dcharts",
+      "host": "dcharts.com",
+      "type": "hash",
+      "hashKey": "req.http.cookie",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 3020,
+          "weight": 5
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 3030,
+          "weight": 3
+        }
+      ]
     },
     {
-      "name": "albi",
-      "host": "white",
-      "prefix": "/albi",
-      "ip": "127.0.0.1",
-      "port": 3020
+      "name": "vicanso",
+      "host": "vicanso.com",
+      "type": "random",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 3040,
+          "weight": 10
+        },
+        {
+          "ip": "127.0.0.1",
+          "port": 3050,
+          "weight": 5
+        }
+      ]
     },
     {
-      "name": "albi",
-      "host": "white",
-      "prefix": "/albi",
-      "ip": "127.0.0.1",
-      "port": 3030
-    },
-    {
-      "name": "default-backend",
-      "ip": "127.0.0.1",
-      "port": 8000
+      "name": "aslant",
+      "backends": [
+        {
+          "ip": "127.0.0.1",
+          "port": 8000
+        }
+      ]
     }
-  ],
-  "name": "varnish-test"
+  ]
 }

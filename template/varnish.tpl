@@ -176,7 +176,7 @@ sub custom_ctrl{
   if(req.url == "/varnish/version") {
     return(synth(702));
   }
-  if(req.url == "/varnish/updated-time") {
+  if(req.url == "/varnish/update-history") {
     return(synth(703));
   }
 }
@@ -188,7 +188,7 @@ sub vcl_synth {
   } elsif(resp.status == 702){
     synthetic("<%= version %>");
   } elsif(resp.status == 703){
-    synthetic("<%= updatedAt %>");
+    synthetic("<%= updateHistory %>");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

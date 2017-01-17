@@ -34,60 +34,34 @@ function writeFilePromise(file, data) {
   });
 }
 
-/**
- * [sortServer description]
- * @param  {[type]} serverList [description]
- * @return {[type]}            [description]
- */
-function sortServer(serverList) {
-  let result = {};
-  _.forEach(serverList, (server) => {
-    const name = server.name;
-    if (!result[name]) {
-      result[name] = [];
+
+function sort(items) {
+  const arr = _.map(items, (item) => {
+    const tmp = _.extend({}, item);
+    let sortWeight = 0;
+    if (!item.host) {
+      sortWeight += 4;
     }
-    result[name].push(server);
-  });
-  // 将有配置host的排在前面
-  result = _.values(result);
-  result.sort((tmp1, tmp2) => {
-    const host1 = tmp1[0].host;
-    const host2 = tmp2[0].host;
-    const name1 = tmp1[0].name;
-    const name2 = tmp2[0].name;
-    let v = 0;
-    /* istanbul ignore next */
-    if (host1 && !host2) {
-      v = -1;
-    } else if (!host1 && host2) {
-      v = 1;
-    } else if (name1 < name2) {
-      v = 1;
-    } else if (name1 > name2) {
-      v = -1;
+    if (!item.prefix) {
+      sortWeight += 2;
     }
-    return v;
+    tmp.sortKey = `${sortWeight}-${item.name}`;
+    return tmp;
   });
-  return result;
+  return _.sortBy(arr, item => item.sortKey);
 }
 
-/**
- * [getBackendConfig description]
- * @param  {[type]} serverList [description]
- * @return {[type]}            [description]
- */
-function getBackendConfig(serverList) {
-  const sortedServerList = sortServer(serverList);
+function getBackendConfig(directors) {
+  const sortedDirectors = sort(directors);
   return readFilePromise(path.join(__dirname,
       'template/backend.tpl'))
     .then((tpl) => {
       const template = _.template(tpl);
       const arr = [];
-      _.forEach(sortedServerList, (servers) => {
-        _.forEach(servers, (server, i) => {
-          const tmp = _.pick(server, 'name ip port'.split(' '));
-          tmp.name = _.camelCase(tmp.name);
-          tmp.name += i;
+      _.forEach(sortedDirectors, (director) => {
+        _.forEach(director.backends, (backend, i) => {
+          const tmp = _.extend({}, backend);
+          tmp.name = `${_.camelCase(director.name)}${i}`;
           try {
             arr.push(template(tmp));
           } catch (err) {
@@ -100,23 +74,19 @@ function getBackendConfig(serverList) {
     });
 }
 
-/**
- * [getInitConfig description]
- * @param  {[type]} serverList [description]
- * @return {[type]}            [description]
- */
-function getInitConfig(serverList, director) {
-  const sortedServerList = sortServer(serverList);
+
+function getInitConfig(directors) {
+  const sortedDirectors = sort(directors);
   return readFilePromise(path.join(__dirname, 'template/init.tpl'))
     .then((tpl) => {
       const template = _.template(tpl);
       const arr = [];
-      _.forEach(sortedServerList, (servers) => {
-        const name = _.camelCase(servers[0].name);
-        const type = director || 'round_robin';
+      _.forEach(sortedDirectors, (director) => {
+        const name = _.camelCase(director.name);
+        const type = director.type || 'round_robin';
         arr.push(`new ${name} = directors.${type}();`);
-        _.forEach(servers, (server, i) => {
-          if (type === 'random') {
+        _.forEach(director.backends, (server, i) => {
+          if (type === 'random' || type === 'hash') {
             arr.push(`${name}.add_backend(${name + i}, ${server.weight || 1});`);
           } else {
             arr.push(`${name}.add_backend(${name + i});`);
@@ -132,40 +102,43 @@ function getInitConfig(serverList, director) {
     });
 }
 
-/**
- * [getBackendSelectConfig description]
- * @param  {[type]} serverList [description]
- * @return {[type]}            [description]
- */
-function getBackendSelectConfig(serverList) {
-  const sortedServerList = sortServer(serverList);
+function getBackendSelectConfig(directors) {
+  const sortedDirectors = sort(directors);
   const result = [];
-  let defaultBackend;
-  _.forEach(sortedServerList, (servers) => {
-    const server = servers[0];
+  let defaultDirector;
+  _.forEach(sortedDirectors, (director) => {
     const arr = [];
     /* istanbul ignore else */
-    if (server.host) {
-      arr.push(`req.http.host == "${server.host}"`);
+    if (director.host) {
+      arr.push(`req.http.host == "${director.host}"`);
     }
     /* istanbul ignore else */
-    if (server.prefix) {
-      arr.push(`req.url ~ "^${server.prefix}"`);
+    if (director.prefix) {
+      arr.push(`req.url ~ "^${director.prefix}"`);
     }
     const condition = arr.join(' && ');
     if (condition) {
       result.push({
-        name: server.name,
+        name: director.name,
         condition,
+        type: director.type,
       });
     } else {
-      defaultBackend = server.name;
+      defaultDirector = director;
     }
   });
 
+  const getBackendHint = (director) => {
+    if (director.type === 'hash') {
+      const hashKey = director.hashKey || 'req.url';
+      return `set req.backend_hint = ${_.camelCase(director.name)}.backend(${hashKey});`;
+    }
+    return `set req.backend_hint = ${_.camelCase(director.name)}.backend();`;
+  };
+
   const arr = [];
-  if (defaultBackend) {
-    arr.push(`set req.backend_hint = ${_.camelCase(defaultBackend)}.backend();`);
+  if (defaultDirector) {
+    arr.push(getBackendHint(defaultDirector));
   }
   _.forEach(result, (item, i) => {
     if (i === 0) {
@@ -173,7 +146,7 @@ function getBackendSelectConfig(serverList) {
     } else {
       arr.push(`} elsif (${item.condition}) {`);
     }
-    arr.push(`  set req.backend_hint = ${_.camelCase(item.name)}.backend();`);
+    arr.push(`  ${getBackendHint(item)}`);
   });
   /* istanbul ignore else */
   if (arr.length) {
@@ -192,14 +165,14 @@ function getBackendSelectConfig(serverList) {
  * @param  {[type]} serverList [description]
  * @return {[type]}            [description]
  */
-function getConfig(serverList, director) {
+function getConfig(directors) {
   const data = {};
-  return getBackendConfig(serverList).then((config) => {
+  return getBackendConfig(directors).then((config) => {
     data.backendConfig = config;
-    return getInitConfig(serverList, director);
+    return getInitConfig(directors);
   }).then((config) => {
     data.initConfig = config;
-    data.selectConfig = getBackendSelectConfig(serverList);
+    data.selectConfig = getBackendSelectConfig(directors);
     return data;
   });
 }
@@ -209,21 +182,27 @@ function getConfig(serverList, director) {
  * @param  {[type]} config [description]
  * @return {[type]}        [description]
  */
-function getVcl(config) {
+function getVcl(conf) {
+  const config = _.extend({
+    version: new Date().toISOString(),
+    updateHistory: [new Date().toISOString()],
+  }, conf);
   /* istanbul ignore if */
-  if (!config.backends || !config.name ) {
-    throw new Error('backends, name can not be null');
+  if (!config.directors || !config.name) {
+    throw new Error('directors, name can not be null');
   }
-  if (!config.version) {
-    config.version = new Date().toISOString();
+  if (!config.directors.length) {
+    throw new Error('directors can not be empty');
   }
-  if (!config.updatedAt) {
-    config.updatedAt = [new Date().toISOString()];
-  }
+  _.forEach(config.directors, (item) => {
+    if (item.type === 'shard') {
+      throw new Error('shard director is not support');
+    }
+  });
   const cloneConfig = _.extend({
-    stale: '3',
+    stale: 3,
   }, config);
-  return getConfig(cloneConfig.backends, cloneConfig.director).then((data) => {
+  return getConfig(cloneConfig.directors).then((data) => {
     _.extend(cloneConfig, data);
     return readFilePromise(path.join(__dirname, 'template/varnish.tpl'));
   }).then(tpl => _.template(tpl)(cloneConfig));
