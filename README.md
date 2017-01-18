@@ -119,11 +119,9 @@ View my [example](./default.vcl) of varnish vcl.
 
 ### How the cache of varnish is created?
 
-![](./assets/cache_req_fsm.svg)
+![](./assets/cache_req_fsm.png)
 
 ### RFC2616_Ttl
-
-
 
 At first, let me show how the `varnish cache ttl` is created and the default setting,
 
@@ -201,7 +199,7 @@ node test/support/server
 
 - HTTP Status 不属于 202、203、204、300、301、302、304、307、404、410、414，响应头设置Cache-Control也无用 `vcl_recv` --> `vcl_hash` --> `vcl_miss` --> `vcl_backend_fetch` --> `vcl_response` --> `vcl_deliver`
 
-- Set-Cookie、max-age=0 等由服务器端返回的数据导致不能缓存的，`vcl_recv` --> `vcl_hash` --> `vcl_miss` --> `vcl_backend_fetch` --> `vcl_response` --> `vcl_deliver`
+- Set-Cookie、max-age=0 等由服务器端返回的数据设置不能缓存的，`vcl_recv` --> `vcl_hash` --> `vcl_miss` --> `vcl_backend_fetch` --> `vcl_response` --> `vcl_deliver`
 
 ### 可缓存的GET/HEAD请求
 
