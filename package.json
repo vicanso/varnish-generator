@@ -1,7 +1,7 @@
 {
   "name": "varnish-generator",
   "version": "1.0.0",
-  "description": "generate varnish vcl file",
+  "description": "The simple way of generating general vcl file for varnish",
   "main": "index.js",
   "bin": {
     "varnish-generator": "./.bin/varnish-generator"
