@@ -1,8 +1,8 @@
 backend <%= name %> {
   .host = "<%= ip %>";
   .port = "<%= port %>";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";

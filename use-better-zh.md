@@ -6,9 +6,9 @@
 
 ## 强悍的性能表现
 
-Varnish has a modern architecture and is written with performance in mind. It is usually bound by the speed of the network, effectively turning performance into a non-issue. You get to focus on how your web applications work and you can allow yourself, to some degree, to care less about performance and scalability. 一直以来，我都认为这句话极其简单的概括了`varnish`的性能上的强悍，在我的实践中，对于`HTTP`缓存的处理的确瓶颈是在网络上，而非程序或者其它的硬件瓶颈。
+Varnish has a modern architecture and is written with performance in mind. It is usually bound by the speed of the network, effectively turning performance into a non-issue. You get to focus on how your web applications work and you can allow yourself, to some degree, to care less about performance and scalability. 一直以来，我都认为这句话极其简单的概括了`varnish`性能上的强悍，在我的实践中，对于`HTTP`缓存的处理的确瓶颈是在网络上，而非程序或者其它的硬件瓶颈。
 
-我使用自己的`HP Gen8`做了一次测试（未对系统做调做优，也只是本机压本机），请求5KB（gzip之后）的数据，`siege -c 2000 -t 1m "http://127.0.0.1:8001/"`
+我使用自己的`HP Gen8`做了一次测试（未对系统做调做优，也只是本机压本机），请求5KB（gzip之后）的数据，`siege -c 2000 -t 1m "http://127.0.0.1:8001/"`，CPU Usage 在5%以下
 
 ```
 Transactions:		      238538 hits
@@ -35,9 +35,9 @@ Shortest transaction:	        0.00
 void
 RFC2616_Ttl(struct busyobj *bo, double now, double *t_origin,
     float *ttl, float *grace, float *keep)
-  
+
   ...
-  
+
   default:
     *ttl = -1.;
     break;
@@ -112,10 +112,10 @@ RFC2616_Ttl(struct busyobj *bo, double now, double *t_origin,
   }
 
   ...
-  
+
 }
 ```
-从上面的代码可以看出，只对于特定的`HTTP Status Code`，才会根据`Cache-Control`或者`Expires`来设置缓存时间，非上述状态码的响应，就算是设置了也无效。`Cache-Control`中可以设置max-age与s-maxage为配置客户端缓存与`varnish`缓存的不同。
+从上面的代码可以看出，只对于特定的`HTTP Status Code`，才会根据`Cache-Control`或者`Expires`来设置缓存时间，非上述状态码的响应，就算是设置了也无效。`Cache-Control`中可以设置max-age与s-maxage为配置客户端缓存与`varnish`缓存的不同（至于后面的Expires我不使用该字段，也不建议大家使用）。
 
 ## 缓存KEY的生成与配置
 
@@ -167,7 +167,7 @@ sub vcl_hash{
 
 - 对于max-age较长的响应（如静态文件），未合理使用s-maxage
 
-  对于静态文件（文件名中带有版本号，jquery.version.js），希望在客户端缓存的时间越长越好，因此后端响应该请求的时候设置了一年的缓存时间：`max-age=31536000`。本来这是挺合理的，但是因为该请求也经过了`varnish`结果被`varnish`缓存起来了，一开始我也没发现有什么不好之处。后来有一天，`varnish`占用的内存一直在涨，才发现原来有人恶意请求静态文件，通过添加后缀`?t=xxxx`这样，导致请求相同的静态文件，但是由于url不一致，每次都生成了新的缓存，一直涨一直涨...后端调整代码，对于响应`max-age`超过3600的，要求设置`s-maxage`。（本来更应该是后端对接口参数做更严格的检查，如果有多余参数返回400，但调整太多，因此只能如果将就）
+  对于静态文件（文件名中带有版本号，jquery.version.js），希望在客户端缓存的时间越长越好，因此后端响应该请求的时候设置了一年的缓存时间：`max-age=31536000`。本来这是挺合理的，但是因为该请求也经过了`varnish`结果被`varnish`缓存起来了，一开始我也没发现有什么不好之处。后来有一天，`varnish`占用的内存一直在涨，才发现原来有人恶意请求静态文件，通过添加后缀`?t=xxxx`这样，导致请求相同的静态文件，但是由于url不一致，每次都生成了新的缓存，一直涨一直涨...后端调整代码，对于响应`max-age`超过3600的，要求设置`s-maxage`。（本来更应该是后端对接口参数做更严格的检查，如果有多余参数返回出错400）
 
 
 ## 打造更通用合理的配置
@@ -180,13 +180,13 @@ sub vcl_hash{
 sub vcl_recv {
 
   ...
-  
+
   if(req.url ~ "/users/" || req.url ~ "/fav/book") {
     return (pass);
   }
-  
+
   ...
-  
+
 }
 ```
 
@@ -194,7 +194,7 @@ sub vcl_recv {
 
 ```
 sub vcl_backend_response {
-  
+
   ...
 
   # The following scenarios set uncacheable
@@ -212,7 +212,7 @@ sub vcl_backend_response {
   }
 
   ...
-  
+
 }
 ```
 
@@ -220,14 +220,14 @@ sub vcl_backend_response {
 
 ```
 sub vcl_recv {
-  
+
   ...
-  
+
   # no cache request
   if(req.http.Cache-Control == "no-cache" || req.url ~ "\?cache=false" || req.url ~ "&cache=false"){
     return (pass);
   }
-  
+
   ...
 
 }
@@ -244,13 +244,13 @@ sub vcl_recv {
 
 ### 使用m-stale提升过期数据的响应
 
-在真实使用的环境中，数据在刚过期的时间，为了更好的响应速度，我希望能够直接使用刚过期数据返回（因为刚过期，时效性还是能保证的），同时去更新缓存的数据，因此调整`vcl_hit`的配置，从`Cache-Control`中获取`m-stale`：
+在真实使用的环境中，数据在刚过期的期间（如2秒以内），为了更好的响应速度，我希望能够直接使用刚过期数据返回（因为刚过期，时效性还是能保证的），同时去更新缓存的数据，因此调整`vcl_hit`的配置，从`Cache-Control`中获取`m-stale`：
 
 ```
 sub vcl_hit {
-  
+
   ...
-  
+
   # backend is healthy
   if (std.healthy(req.backend_hint)) {
     # set the stale
@@ -258,9 +258,9 @@ sub vcl_hit {
       return (deliver);
     }
   }
-  
+
   ...
-  
+
 }
 ```
 
@@ -272,14 +272,17 @@ sub vcl_hit {
 ```
 sub vcl_hit {
   ...
-  else if (obj.ttl + obj.grace > 0s) {
+  
+  if (std.healthy(req.backend_hint)) {
+    ...
+  } else if (obj.ttl + obj.grace > 0s) {
     # Object is in grace, deliver it
     # Automatically triggers a background fetch
     return (deliver);
   }
 
   ...
-  
+
 }
 ```
 
@@ -287,9 +290,9 @@ sub vcl_hit {
 
 ### 后端响应设置过长的缓存时间
 
-对于这个问题，首先需要明确一点是：`varnish`是可以提高多并发下的性能，但是不能把它当成是提升接口的性能（如某个接口的响应时间需要5秒，通过一个定时程序去定时调用，让它一直在varnish中有缓存），所以在使用`varnish`首先要保障的是后端接口的性能是高效的（非高并发时）。
+对于这个问题，首先需要明确一点是：`varnish`是用于提高多并发下的性能，但是不能把它当成是提升接口的性能（如某个接口的响应时间需要5秒，通过一个定时程序去定时调用，让它一直在varnish中有缓存），所以在使用`varnish`首先要保障的是后端接口的性能是高效的（非高并发时）。
 
-对于数据的缓存，我刚开始使用的时候，也是有多长时间设置多长时间的，后来发现，其实完全没有这个必要，请求`/books`，如果设置`Cache-Control:max-age=3600`，那么的确是3600秒才请求backend一次，但是如果我设置为`Cache-Control:max-age=3600, s-maxage=60`，对于`backend`是每60秒会请求一次，与每个小时请求一次对服务器的压力并没有什么区别。那么后一种配置有什么好处呢？首先避免占用过高的内存使用（如果该接口并非频繁请求），其次我自己在使用过程中的确出现过由于人为原因配置了错误的数据，导致接口缓存数据错误，需要手工清除缓存的情况，找出所有可能影响的url，对所有的varnish一一清除，这也是很浪费时间而且容易出错的事情。（我自己的使用实践是基本不会设置s-maxage超过300s）
+对于数据的缓存，我刚开始使用的时候，也是有多长时间设置多长时间的，后来发现，其实完全没有这个必要，请求`/books`，如果设置`Cache-Control:max-age=3600`，那么的确是3600秒才请求backend一次，但是如果我设置为`Cache-Control:max-age=3600, s-maxage=60`，对于`backend`是每60秒会请求一次，与每个小时请求一次对服务器的压力并没有什么区别。那么后一种配置有什么好处呢？首先避免占用过高的内存使用（如果该接口并非频繁请求），其次我自己在使用过程中的确出现过由于人为原因配置了错误的数据，导致接口缓存数据错误，需要手工清除缓存的情况，找出所有可能影响的url，对所有的varnish一一清除，这也是很浪费时间而且容易出错的事情，而短时间的缓存则很快会刷新，不用手工清理。（我自己的使用实践是基本不会设置s-maxage超过300s）
 
 ### 合理使用Hit-For-Pass
 
@@ -301,11 +304,11 @@ sub vcl_hit {
 
 - 请求的后端响应是不可缓存的（Set-Cookie、max-age=0 等由服务器端返回的数据设置不能缓存的）
 
-  那么将队列中等待的所有请求都会发送到`backend`，各自根据响应返回给期对应的客户端。这里就存在了一个问题，如果第一次请求响应很慢，那么有可能会堆积较多的请求，到时会一并请求到后端，导致后端的压力增大，这也是上面所说，如果不能缓存的请求，尽量使用`Cache-Control:no-cache`的其中一个原因。假如在现有系统，无法做大的改造，那么如果不能缓存的请求，只能使用后端设置的方式，那么有没办法能优化性能呢？是有的，这就是`Hit-For-Pass`，看如下配置：
+  那么将队列中等待的所有请求都会发送到`backend`，各自根据响应返回给其对应的客户端。这里就存在了一个问题，如果第一次请求响应很慢，那么有可能会堆积较多的请求，到时会一并请求到后端，导致后端的压力增大，这也是上面所说，如果不能缓存的请求，尽量使用`Cache-Control:no-cache`的其中一个原因。假如在现有系统，无法做大的改造，那么如果不能缓存的请求，只能使用后端设置的方式，那么有没办法能优化性能呢？是有的，这就是`Hit-For-Pass`，看如下配置：
 
 ```
 sub vcl_backend_response {
-  
+
   ...
 
   # The following scenarios set uncacheable
@@ -323,7 +326,7 @@ sub vcl_backend_response {
   }
 
   ...
-  
+
 }
 ```
 
@@ -449,4 +452,3 @@ GET /cache/max-age/60 返回数据设置Cache-Control:public, max-age=60
   ]
 }
 ```
-

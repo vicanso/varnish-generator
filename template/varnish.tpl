@@ -51,7 +51,7 @@ sub vcl_recv {
 
   /* backend selector */
 <%= selectConfig %>
-  
+
   if (req.method != "GET" &&
     req.method != "HEAD" &&
     req.method != "PUT" &&
@@ -86,7 +86,7 @@ sub vcl_recv {
 
   # Send Surrogate-Capability headers to announce ESI support to backend
   # set req.http.Surrogate-Capability = "key=ESI/1.0";
-  
+
   # sort the query string
   set req.url = std.querysort(req.url);
 
@@ -145,7 +145,7 @@ sub vcl_hit {
     return (deliver);
   }
 
-  # fetch & deliver once we get the result  
+  # fetch & deliver once we get the result
   return (miss);
 }
 
@@ -237,6 +237,6 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
-  
+
   return (deliver);
 }

@@ -20,21 +20,21 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 
 - `directors` Director list, Array
 
-- `directors.name` The director's name
+  - `name` The director's name
 
-- `directors.prefix` The prefix of the url for the director, optional
+  - `prefix` The prefix of the url for the director, optional
 
-- `directors.host` The host for the director, optional
+  - `host` The host for the director, optional
 
-- `directors.type` The algorithm of load balance, it can be 'fallback', 'hash', 'random', 'round_robin'. The default is 'round_robin'
+  - `type` The algorithm of load balance, it can be 'fallback', 'hash', 'random', 'round_robin'. The default is 'round_robin'
 
-- `directors.backends` The backend list, Array
+  - `backends` The backend list, Array
 
-- `directors.backends.ip` The ip of backend
+    - `ip` The ip of backend
 
-- `directors.backends.port` The port of backend
+    - `port` The port of backend
 
-- ``directors.backends.weight` The weight of backend, it's used for `random` and `hash`
+    - `weight` The weight of backend, it's used for `random` and `hash`
 
 ```json
 {
@@ -115,7 +115,7 @@ Please read [my advise about using varnish](./use-better-zh.md).
 
 ## How to run
 
-varnishd -f examples/default.vcl -t 0 -p default_grace=1800 -p default_keep=10 -a :8001 -F
+varnishd -f examples/default.vcl -p default_ttl=0 -p default_grace=1800 -p default_keep=10 -a :8001 -F
 
 ## License
 

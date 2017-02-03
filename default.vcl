@@ -7,8 +7,8 @@ import directors;
 backend dcharts0 {
   .host = "127.0.0.1";
   .port = "3020";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -18,11 +18,12 @@ backend dcharts0 {
     .threshold = 3;
   }
 }
+
 backend dcharts1 {
   .host = "127.0.0.1";
   .port = "3030";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -32,11 +33,12 @@ backend dcharts1 {
     .threshold = 3;
   }
 }
+
 backend vicanso0 {
   .host = "127.0.0.1";
   .port = "3040";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -46,11 +48,12 @@ backend vicanso0 {
     .threshold = 3;
   }
 }
+
 backend vicanso1 {
   .host = "127.0.0.1";
   .port = "3050";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -60,11 +63,12 @@ backend vicanso1 {
     .threshold = 3;
   }
 }
+
 backend timtam0 {
   .host = "127.0.0.1";
   .port = "3000";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -74,11 +78,12 @@ backend timtam0 {
     .threshold = 3;
   }
 }
+
 backend timtam1 {
   .host = "127.0.0.1";
   .port = "3010";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -88,11 +93,12 @@ backend timtam1 {
     .threshold = 3;
   }
 }
+
 backend aslant0 {
   .host = "127.0.0.1";
   .port = "8000";
-  .connect_timeout = 3s;
-  .first_byte_timeout = 10s;
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -102,6 +108,7 @@ backend aslant0 {
     .threshold = 3;
   }
 }
+
 # backend end
 
 
@@ -153,7 +160,6 @@ sub vcl_recv {
       set req.http.Via = "varnish-test";
     }
 
-    set req.http.startedAt = std.time2real(now, 0.0);
   }
 
 
@@ -277,7 +283,6 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
-  set resp.http.X-Varnish-Use = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
   return (deliver);
 }
 
@@ -302,9 +307,9 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-01-17T09:42:47.341Z");
+    synthetic("2017-02-03T02:12:56.455Z");
   } elsif(resp.status == 703){
-    synthetic("2017-01-17T09:42:47.341Z");
+    synthetic("2017-02-03T02:12:56.455Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
