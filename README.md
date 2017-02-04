@@ -107,7 +107,7 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 
 ## How to use varnish better?
 
-Please read [my advise about using varnish](./use-better-zh.md).
+Please read [my advise about using varnish](./suggestion.md).
 
 ## How the cache of varnish is created?
 
@@ -115,7 +115,15 @@ Please read [my advise about using varnish](./use-better-zh.md).
 
 ## How to run
 
-varnishd -f examples/default.vcl -p default_ttl=0 -p default_grace=1800 -p default_keep=10 -a :8001 -F
+varnishd -f ./default.vcl -p default_ttl=0 -p default_grace=1800 -p default_keep=10 -a :8001 -F
+
+## Using docker
+
+```
+docker pull vicanso/varnish
+
+docker run -v $HOME/default.vcl:/etc/varnish/default.vcl -p 8001:80 -d --restart=always vicanso/varnish
+```
 
 ## License
 

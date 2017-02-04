@@ -160,6 +160,7 @@ sub vcl_recv {
       set req.http.Via = "varnish-test";
     }
 
+    set req.http.startedAt = std.time2real(now, 0.0);
   }
 
 
@@ -173,7 +174,7 @@ sub vcl_recv {
   } elsif (req.url ~ "^/timtam") {
     set req.backend_hint = timtam.backend();
   }
-  
+
   if (req.method != "GET" &&
     req.method != "HEAD" &&
     req.method != "PUT" &&
@@ -208,7 +209,7 @@ sub vcl_recv {
 
   # Send Surrogate-Capability headers to announce ESI support to backend
   # set req.http.Surrogate-Capability = "key=ESI/1.0";
-  
+
   # sort the query string
   set req.url = std.querysort(req.url);
 
@@ -251,7 +252,7 @@ sub vcl_purge {
 
 
 sub vcl_hit {
-  if (obj.ttl >= 0s) {
+  if (obj.ttl > 0s) {
     # A pure unadultered hit, deliver it
     return (deliver);
   }
@@ -267,7 +268,7 @@ sub vcl_hit {
     return (deliver);
   }
 
-  # fetch & deliver once we get the result  
+  # fetch & deliver once we get the result
   return (miss);
 }
 
@@ -283,6 +284,7 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
+  set resp.http.X-Varnish-Use = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
   return (deliver);
 }
 
@@ -307,9 +309,9 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-02-03T02:12:56.455Z");
+    synthetic("2017-02-04T08:59:19.793Z");
   } elsif(resp.status == 703){
-    synthetic("2017-02-03T02:12:56.455Z");
+    synthetic("2017-02-04T08:59:19.793Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -358,6 +360,6 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
-  
+
   return (deliver);
 }

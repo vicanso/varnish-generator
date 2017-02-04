@@ -129,7 +129,7 @@ sub vcl_purge {
 
 
 sub vcl_hit {
-  if (obj.ttl >= 0s) {
+  if (obj.ttl > 0s) {
     # A pure unadultered hit, deliver it
     return (deliver);
   }
