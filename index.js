@@ -201,6 +201,7 @@ function getVcl(conf) {
   });
   const cloneConfig = _.extend({
     stale: 3,
+    varnish: '5',
   }, config);
   return getConfig(cloneConfig.directors).then((data) => {
     _.extend(cloneConfig, data);

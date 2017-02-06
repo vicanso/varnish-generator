@@ -159,8 +159,9 @@ sub vcl_recv {
     } else {
       set req.http.Via = "varnish-test";
     }
-
+    
     set req.http.startedAt = std.time2real(now, 0.0);
+    
   }
 
 
@@ -284,7 +285,9 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
+  
   set resp.http.X-Varnish-Use = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
+  
   return (deliver);
 }
 
@@ -309,9 +312,9 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-02-04T08:59:19.793Z");
+    synthetic("2017-02-06T13:51:03.828Z");
   } elsif(resp.status == 703){
-    synthetic("2017-02-04T08:59:19.793Z");
+    synthetic("2017-02-06T13:51:03.829Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -324,9 +327,11 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
+  
   if (bereq.method == "GET") {
     unset bereq.body;
   }
+  
   return (fetch);
 }
 

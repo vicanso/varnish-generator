@@ -16,7 +16,11 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 
 - `name` The varnish instance's name
 
+- `varnish` The varnish version, support `'4'` and `'5'`, default is `'5'`
+
 - `stale` The seconds of stale, default is 3
+
+- `version` The vcl version , default is `new Date().toISOString()`
 
 - `directors` Director list, Array
 

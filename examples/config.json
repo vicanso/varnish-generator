@@ -1,6 +1,7 @@
 {
   "name": "varnish-test",
   "stale": 2,
+  "varnish": "5",
   "directors": [
     {
       "name": "timtam",

@@ -43,8 +43,9 @@ sub vcl_recv {
     } else {
       set req.http.Via = "<%= name %>";
     }
-
+    <% if (varnish >= '5') { %>
     set req.http.startedAt = std.time2real(now, 0.0);
+    <% } %>
   }
 
 
@@ -161,7 +162,9 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
+  <% if (varnish >= '5') { %>
   set resp.http.X-Varnish-Use = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
+  <% } %>
   return (deliver);
 }
 
@@ -201,9 +204,11 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
+  <% if (varnish >= '5') { %>
   if (bereq.method == "GET") {
     unset bereq.body;
   }
+  <% } %>
   return (fetch);
 }
 
