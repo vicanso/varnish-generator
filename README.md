@@ -111,7 +111,7 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 
 ## How to use varnish better?
 
-Please read [my suggestion about using varnish](./suggestion.md).
+Please read my [suggestion](./suggestion.md) about using varnish.
 
 ## How the cache of varnish is created?
 
