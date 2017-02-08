@@ -1,10 +1,114 @@
-# varnish version <%= varnish %> 
+# varnish version 4 
 vcl 4.0;
 import std;
 import directors;
 
 # backend start
-<%= backendConfig %>
+backend dcharts0 {
+  .host = "127.0.0.1";
+  .port = "3020";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend dcharts1 {
+  .host = "127.0.0.1";
+  .port = "3030";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend vicanso0 {
+  .host = "127.0.0.1";
+  .port = "3040";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend vicanso1 {
+  .host = "127.0.0.1";
+  .port = "3050";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend timtam0 {
+  .host = "127.0.0.1";
+  .port = "3000";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend timtam1 {
+  .host = "127.0.0.1";
+  .port = "3010";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend aslant0 {
+  .host = "127.0.0.1";
+  .port = "8000";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
 # backend end
 
 
@@ -12,7 +116,19 @@ import directors;
 # Housekeeping
 
 # init start
-<%= initConfig %>
+sub vcl_init {
+  new dcharts = directors.hash();
+  dcharts.add_backend(dcharts0, 5);
+  dcharts.add_backend(dcharts1, 3);
+  new vicanso = directors.random();
+  vicanso.add_backend(vicanso0, 10);
+  vicanso.add_backend(vicanso1, 5);
+  new timtam = directors.fallback();
+  timtam.add_backend(timtam0);
+  timtam.add_backend(timtam1);
+  new aslant = directors.round_robin();
+  aslant.add_backend(aslant0);
+}
 # init end
 
 sub vcl_fini {
@@ -39,19 +155,24 @@ sub vcl_recv {
     }
     /* set Via */
     if (req.http.Via) {
-      set req.http.Via = req.http.Via + ", <%= name %>";
+      set req.http.Via = req.http.Via + ", varnish-test";
     } else {
-      set req.http.Via = "<%= name %>";
+      set req.http.Via = "varnish-test";
     }
-    <% if (varnish >= '5') { %>
-    set req.http.startedAt = std.time2real(now, 0.0);
-    <% } %>
+    
   }
 
 
 
   /* backend selector */
-<%= selectConfig %>
+  set req.backend_hint = aslant.backend();
+  if (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {
+    set req.backend_hint = dcharts.backend(req.url);
+  } elsif (req.http.host == "vicanso.com") {
+    set req.backend_hint = vicanso.backend();
+  } elsif (req.url ~ "^/timtam") {
+    set req.backend_hint = timtam.backend();
+  }
 
   if (req.method != "GET" &&
     req.method != "HEAD" &&
@@ -137,7 +258,7 @@ sub vcl_hit {
   # backend is healthy
   if (std.healthy(req.backend_hint)) {
     # set the stale
-    if(obj.ttl + std.duration(std.integer(regsub(obj.http.Cache-Control, "[\s\S]*m-stale=(\d)+[\s\S]*", "\1"), <%= stale %>) + "s", <%= stale %>s) > 0s){
+    if(obj.ttl + std.duration(std.integer(regsub(obj.http.Cache-Control, "[\s\S]*m-stale=(\d)+[\s\S]*", "\1"), 2) + "s", 2s) > 0s){
       return (deliver);
     }
   } else if (obj.ttl + obj.grace > 0s) {
@@ -162,9 +283,7 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
-  <% if (varnish >= '5') { %>
-  set resp.http.X-Varnish-Use = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
-  <% } %>
+  
   return (deliver);
 }
 
@@ -189,9 +308,9 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("<%= version %>");
+    synthetic("2017-02-08T06:37:38.095Z");
   } elsif(resp.status == 703){
-    synthetic("<%= updateHistory %>");
+    synthetic("2017-02-08T06:37:38.095Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -204,11 +323,7 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
-  <% if (varnish >= '5') { %>
-  if (bereq.method == "GET") {
-    unset bereq.body;
-  }
-  <% } %>
+  
   return (fetch);
 }
 

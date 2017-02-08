@@ -1,4 +1,4 @@
-# for varnish 5.x
+# varnish version 5 
 vcl 4.0;
 import std;
 import directors;
@@ -312,9 +312,9 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-02-06T13:51:03.828Z");
+    synthetic("2017-02-08T06:37:03.281Z");
   } elsif(resp.status == 703){
-    synthetic("2017-02-06T13:51:03.829Z");
+    synthetic("2017-02-08T06:37:03.282Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

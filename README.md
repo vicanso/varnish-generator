@@ -1,5 +1,10 @@
 # varnish vcl generator
 
+[![Build Status](https://travis-ci.org/vicanso/varnish-generator.svg?branch=master)](https://travis-ci.org/vicanso/varnish-generator)
+[![Coverage Status](https://img.shields.io/coveralls/vicanso/varnish-generator/master.svg?style=flat)](https://coveralls.io/r/vicanso/varnish-generator?branch=master)
+[![npm](http://img.shields.io/npm/v/varnish-generator.svg?style=flat-square)](https://www.npmjs.org/package/varnish-generator)
+[![Github Releases](https://img.shields.io/npm/dm/varnish-generator.svg?style=flat-square)](https://github.com/vicanso/varnish-generator)
+
 ## Installation
 
 ```bash
@@ -111,7 +116,7 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 
 ## How to use varnish better?
 
-Please read my [suggestion](./suggestion.md) about using varnish.
+Please read my [suggestion](https://github.com/vicanso/articles/blob/master/varnish-suggestion.md) about using varnish.
 
 ## How the cache of varnish is created?
 
