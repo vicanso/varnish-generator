@@ -1,7 +1,7 @@
 'use strict';
 const assert = require('assert');
 const varnishGenerator = require('..');
-const varnishConfig = require('../examples/config.json');
+const varnishConfig = require('../examples/varnish4/config.json');
 const directors = varnishConfig.directors;
 const backends = varnishConfig.backends;
 const fs = require('fs');
