@@ -12,7 +12,7 @@ const backendConfig =
 const initConfig =
   'sub vcl_init {\n  new dcharts = directors.hash();\n  dcharts.add_backend(dcharts0, 5);\n  dcharts.add_backend(dcharts1, 3);\n  new vicanso = directors.random();\n  vicanso.add_backend(vicanso0, 10);\n  vicanso.add_backend(vicanso1, 5);\n  new timtam = directors.fallback();\n  timtam.add_backend(timtam0);\n  timtam.add_backend(timtam1);\n  new aslant = directors.round_robin();\n  aslant.add_backend(aslant0);\n}';
 const selectConfig =
-  '  set req.backend_hint = aslant.backend();\n  if (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {\n    set req.backend_hint = dcharts.backend(req.url);\n  } elsif (req.http.host == "vicanso.com") {\n    set req.backend_hint = vicanso.backend();\n  } elsif (req.url ~ "^/timtam") {\n    set req.backend_hint = timtam.backend();\n  }';
+  '  set req.backend_hint = aslant.backend();\n  if (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {\n    set req.backend_hint = dcharts.backend(req.http.cookie);\n  } elsif (req.http.host == "vicanso.com") {\n    set req.backend_hint = vicanso.backend();\n  } elsif (req.url ~ "^/timtam") {\n    set req.backend_hint = timtam.backend();\n  }';
 
 
 describe('varnish-config', () => {
