@@ -159,9 +159,7 @@ sub vcl_recv {
     } else {
       set req.http.Via = "varnish-test";
     }
-    
     set req.http.startedAt = std.time2real(now, 0.0);
-    
   }
 
 
@@ -285,7 +283,6 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
-  
   set req.http.varnishUse = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
   if (resp.http.Server-Timing) {
     if (std.real(req.http.varnishUse, 0) > 0) {
@@ -300,7 +297,6 @@ sub vcl_deliver {
       set resp.http.Server-Timing = "9=0.000;Varnish";
     }
   }
-  
   return (deliver);
 }
 
@@ -322,7 +318,7 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-02-23T09:25:29.610Z");
+    synthetic("2017-02-23T13:33:31.404Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
