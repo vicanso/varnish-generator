@@ -1,10 +1,10 @@
-# varnish version <%= varnish %> 
+# varnish version {{.Varnish}}
 vcl 4.0;
 import std;
 import directors;
 
 # backend start
-<%= backendConfig %>
+{{.BackendConfig}}
 # backend end
 
 
@@ -12,7 +12,7 @@ import directors;
 # Housekeeping
 
 # init start
-<%= initConfig %>
+{{.InitConfig}}
 # init end
 
 sub vcl_fini {
@@ -39,19 +39,19 @@ sub vcl_recv {
     }
     /* set Via */
     if (req.http.Via) {
-      set req.http.Via = req.http.Via + ", <%= name %>";
+      set req.http.Via = req.http.Via + ", {{.Name}}";
     } else {
-      set req.http.Via = "<%= name %>";
+      set req.http.Via = "{{.Name}}";
     }
-    <% if (varnish >= '5') { %>
+    {{ if eq .Varnish 4 }}
     set req.http.startedAt = std.time2real(now, 0.0);
-    <% } %>
+    {{ end }}
   }
 
 
 
   /* backend selector */
-<%= selectConfig %>
+{{.SelectConfig}}
 
   if (req.method != "GET" &&
     req.method != "HEAD" &&
@@ -137,7 +137,7 @@ sub vcl_hit {
   # backend is healthy
   if (std.healthy(req.backend_hint)) {
     # set the stale
-    if(obj.ttl + std.duration(std.integer(regsub(obj.http.Cache-Control, "[\s\S]*m-stale=(\d)+[\s\S]*", "\1"), <%= stale %>) + "s", <%= stale %>s) > 0s){
+    if(obj.ttl + std.duration(std.integer(regsub(obj.http.Cache-Control, "[\s\S]*m-stale=(\d)+[\s\S]*", "\1"), {{.Stale}}) + "s", {{.Stale}}s) > 0s){
       return (deliver);
     }
   } else if (obj.ttl + obj.grace > 0s) {
@@ -162,9 +162,9 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
-  <% if (varnish >= '5') { %>
+  {{   if eq .Varnish 4 }}
   set resp.http.X-Varnish-Use = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
-  <% } %>
+  {{ end }}
   return (deliver);
 }
 
@@ -179,9 +179,6 @@ sub custom_ctrl{
   if(req.url == "/varnish/version") {
     return(synth(702));
   }
-  if(req.url == "/varnish/update-history") {
-    return(synth(703));
-  }
 }
 
 
@@ -189,9 +186,7 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("<%= version %>");
-  } elsif(resp.status == 703){
-    synthetic("<%= updateHistory %>");
+    synthetic("{{.Version}}");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -204,11 +199,11 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
-  <% if (varnish >= '5') { %>
+  {{ if eq .Varnish 4 }}
   if (bereq.method == "GET") {
     unset bereq.body;
   }
-  <% } %>
+  {{ end }}
   return (fetch);
 }
 

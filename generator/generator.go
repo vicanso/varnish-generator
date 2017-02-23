@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var dbg = debug.Debug("varnish-generator")
@@ -34,7 +35,8 @@ type Director struct {
 // Config the varnish config
 type Config struct {
 	Name      string
-	Stale     int `yaml:",omitempty"`
+	Stale     int    `yaml:",omitempty"`
+	Version   string `yaml:",omitempty"`
 	Varnish   int
 	Directors []Director
 }
@@ -85,7 +87,8 @@ func toCamelCase(s string) string {
 	for idx, val := range chunks {
 		chunks[idx] = bytes.Title(val)
 	}
-	return string(bytes.Join(chunks, nil))
+	str := string(bytes.Join(chunks, nil))
+	return strings.ToLower(str[:1]) + str[1:]
 }
 
 func getVarnishConfig(filename string) Config {
@@ -139,21 +142,96 @@ func getBackendConfig(directors []Director) string {
 func getInitConfig(directors []Director) string {
 	data, err := Asset("template/init.tpl")
 	checkError(err)
+	tmpl, err := template.New("init").Parse(string(data))
+	checkError(err)
+	arr := []string{}
 	for _, director := range directors {
 		name := toCamelCase(director.Name)
-		t := ""
+		t := "round_robin"
 		if director.Type != "" {
-			t = "round_robin"
-		} else {
 			t = director.Type
 		}
-		dbg("type:%s", t)
-		// for index, backend := range director.Backends {
-		// 	debug("name")
-		// }
-
+		arr = append(arr, fmt.Sprintf("  new %s = directors.%s()", name, t))
+		for index, backend := range director.Backends {
+			weight := 1
+			if backend.Weight != 0 {
+				weight = backend.Weight
+			}
+			if t == "random" || t == "hash" {
+				arr = append(arr, fmt.Sprintf("  %s.add_backend(%s%d, %d)", name, name, index, weight))
+			} else {
+				arr = append(arr, fmt.Sprintf("  %s.add_backend(%s%d)", name, name, index))
+			}
+		}
 	}
-	return ""
+	type InitConfig struct {
+		Directors string
+	}
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, InitConfig{strings.Join(arr, "\n")})
+	checkError(err)
+	return tpl.String()
+}
+
+func getBackendSelectConfig(directors []Director) string {
+	type BackendHintConfig struct {
+		Name      string
+		Condition string
+		Type      string
+		HashKey   string
+	}
+	getBackendHint := func(hint *BackendHintConfig) string {
+		name := toCamelCase(hint.Name)
+		if hint.Type == "hash" {
+			hashKey := "req.url"
+			if hint.HashKey != "" {
+				hashKey = hint.HashKey
+			}
+			return fmt.Sprintf("set req.backend_hint = %s.backend(%s)", name, hashKey)
+		}
+		return fmt.Sprintf("set req.backend_hint = %s.backend()", name)
+	}
+	var defaultBackendHint *BackendHintConfig
+	result := []BackendHintConfig{}
+	for _, director := range directors {
+		arr := []string{}
+		if director.Host != "" {
+			arr = append(arr, fmt.Sprintf("req.http.host == \"%s\"", director.Host))
+		}
+		if director.Prefix != "" {
+			arr = append(arr, fmt.Sprintf("req.url ~ \"^%s\"", director.Prefix))
+		}
+		condition := strings.Join(arr, " && ")
+		if condition != "" {
+			result = append(result, BackendHintConfig{director.Name, condition, director.Type, director.HashKey})
+		} else {
+			defaultBackendHint = &BackendHintConfig{director.Name, "", director.Type, director.HashKey}
+		}
+	}
+	backendSelectorConfig := []string{}
+	if defaultBackendHint != nil {
+		backendSelectorConfig = append(backendSelectorConfig, getBackendHint(defaultBackendHint))
+	}
+	for index, item := range result {
+		if index == 0 {
+			backendSelectorConfig = append(backendSelectorConfig, fmt.Sprintf("if (%s) {", item.Condition))
+		} else {
+			backendSelectorConfig = append(backendSelectorConfig, fmt.Sprintf("} elsif (%s) {", item.Condition))
+		}
+		backendSelectorConfig = append(backendSelectorConfig, fmt.Sprintf("  %s", getBackendHint(&item)))
+	}
+	backendSelectorCount := len(backendSelectorConfig)
+	formatConfs := []string{}
+	if backendSelectorCount > 0 {
+		if backendSelectorCount > 1 {
+			backendSelectorConfig = append(backendSelectorConfig, "}")
+		}
+		for _, config := range backendSelectorConfig {
+			formatConfs = append(formatConfs, fmt.Sprintf("  %s", config))
+		}
+	}
+	return strings.Join(formatConfs, "\n")
+
 }
 
 // GetVcl get the varnish vcl
@@ -161,6 +239,40 @@ func GetVcl(filename string) string {
 	conf := getVarnishConfig(filename)
 	directors := conf.Directors
 	backendConfig := getBackendConfig(directors)
-	getInitConfig(directors)
-	return backendConfig
+	initConfig := getInitConfig(directors)
+	backendSelectConfig := getBackendSelectConfig(directors)
+	dbg("initConfig:%s", initConfig)
+	dbg("backendSelectConfig:%s", backendSelectConfig)
+	type VarnishConfig struct {
+		Stale         int
+		Name          string
+		Varnish       int
+		BackendConfig string
+		InitConfig    string
+		SelectConfig  string
+		Version       string
+	}
+
+	dbg("conf:%s", conf)
+	version := time.Now().UTC().Format(time.RFC3339)
+	if conf.Version != "" {
+		version = conf.Version
+	}
+	varnishConf := VarnishConfig{
+		Stale:         conf.Stale,
+		Name:          conf.Name,
+		Varnish:       conf.Varnish,
+		BackendConfig: backendConfig,
+		InitConfig:    initConfig,
+		SelectConfig:  backendSelectConfig,
+		Version:       version,
+	}
+	data, err := Asset("template/varnish.tpl")
+	checkError(err)
+	tmpl, err := template.New("varnish").Parse(string(data))
+	checkError(err)
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, varnishConf)
+	checkError(err)
+	return tpl.String()
 }

@@ -1,6 +1,6 @@
 name: varnish-test
 stale: 2
-varnish: 4
+varnish: 4 
 directors:
   -
     name: timtam

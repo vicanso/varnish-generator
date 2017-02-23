@@ -1,3 +1,3 @@
 sub vcl_init {
-<%= directors %>
+{{ .Directors }}
 }
