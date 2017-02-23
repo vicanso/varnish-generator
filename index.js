@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const path = require('path');
 const fs = require('fs');
-
+const yaml = require('js-yaml');
 
 /**
  * [readFilePromise description]
@@ -122,6 +122,7 @@ function getBackendSelectConfig(directors) {
         name: director.name,
         condition,
         type: director.type,
+        hashKey: director.hashKey,
       });
     } else {
       defaultDirector = director;
@@ -185,7 +186,6 @@ function getConfig(directors) {
 function getVcl(conf) {
   const config = _.extend({
     version: new Date().toISOString(),
-    updateHistory: [new Date().toISOString()],
   }, conf);
   /* istanbul ignore if */
   if (!config.directors || !config.name) {
@@ -210,8 +210,12 @@ function getVcl(conf) {
 }
 
 function getVclFromFile(file) {
+  const extname = path.extname(file);
   return readFilePromise(file)
-    .then(data => getVcl(JSON.parse(data)));
+    .then((data) => {
+      const json = extname === '.yml' ? yaml.load(data) : JSON.parse(data);
+      return getVcl(json);
+    });
 }
 
 exports.getBackendConfig = getBackendConfig;

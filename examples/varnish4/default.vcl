@@ -1,4 +1,4 @@
-# varnish version 4 
+# varnish version 4
 vcl 4.0;
 import std;
 import directors;
@@ -159,7 +159,7 @@ sub vcl_recv {
     } else {
       set req.http.Via = "varnish-test";
     }
-    
+    set req.http.startedAt = std.time2real(now, 0.0);
   }
 
 
@@ -167,7 +167,7 @@ sub vcl_recv {
   /* backend selector */
   set req.backend_hint = aslant.backend();
   if (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {
-    set req.backend_hint = dcharts.backend(req.url);
+    set req.backend_hint = dcharts.backend(req.http.cookie);
   } elsif (req.http.host == "vicanso.com") {
     set req.backend_hint = vicanso.backend();
   } elsif (req.url ~ "^/timtam") {
@@ -283,7 +283,20 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
-  
+  set req.http.varnishUse = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
+  if (resp.http.Server-Timing) {
+    if (std.real(req.http.varnishUse, 0) > 0) {
+      set resp.http.Server-Timing = "9=" + (now - std.real2time(std.real(req.http.startedAt, 0.0), now)) + ";Varnish," + resp.http.Server-Timing;
+    } else {
+      set resp.http.Server-Timing = "9=0.000;Varnish," + resp.http.Server-Timing;
+    }
+  } else {
+    if (std.real(req.http.varnishUse, 0) > 0) {
+      set resp.http.Server-Timing = "9=" + (now - std.real2time(std.real(req.http.startedAt, 0.0), now)) + ";Varnish";
+    } else {
+      set resp.http.Server-Timing = "9=0.000;Varnish";
+    }
+  }
   return (deliver);
 }
 
@@ -298,9 +311,6 @@ sub custom_ctrl{
   if(req.url == "/varnish/version") {
     return(synth(702));
   }
-  if(req.url == "/varnish/update-history") {
-    return(synth(703));
-  }
 }
 
 
@@ -308,9 +318,7 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-02-08T06:37:38.095Z");
-  } elsif(resp.status == 703){
-    synthetic("2017-02-08T06:37:38.095Z");
+    synthetic("2017-02-23T09:38:18.059Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
