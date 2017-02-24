@@ -27,7 +27,7 @@ type Director struct {
 	Name     string
 	Prefix   string `yaml:",omitempty"`
 	Host     string `yaml:",omitempty"`
-	HashKey  string `yaml:",omitempty"`
+	HashKey  string `yaml:"hashKey,omitempty"`
 	Type     string
 	Backends []Backend
 }
@@ -37,7 +37,7 @@ type Config struct {
 	Name      string
 	Stale     int    `yaml:",omitempty"`
 	Version   string `yaml:",omitempty"`
-	Varnish   int
+	Varnish   string
 	Directors []Director
 }
 
@@ -151,16 +151,16 @@ func getInitConfig(directors []Director) string {
 		if director.Type != "" {
 			t = director.Type
 		}
-		arr = append(arr, fmt.Sprintf("  new %s = directors.%s()", name, t))
+		arr = append(arr, fmt.Sprintf("  new %s = directors.%s();", name, t))
 		for index, backend := range director.Backends {
 			weight := 1
 			if backend.Weight != 0 {
 				weight = backend.Weight
 			}
 			if t == "random" || t == "hash" {
-				arr = append(arr, fmt.Sprintf("  %s.add_backend(%s%d, %d)", name, name, index, weight))
+				arr = append(arr, fmt.Sprintf("  %s.add_backend(%s%d, %d);", name, name, index, weight))
 			} else {
-				arr = append(arr, fmt.Sprintf("  %s.add_backend(%s%d)", name, name, index))
+				arr = append(arr, fmt.Sprintf("  %s.add_backend(%s%d);", name, name, index))
 			}
 		}
 	}
@@ -187,9 +187,9 @@ func getBackendSelectConfig(directors []Director) string {
 			if hint.HashKey != "" {
 				hashKey = hint.HashKey
 			}
-			return fmt.Sprintf("set req.backend_hint = %s.backend(%s)", name, hashKey)
+			return fmt.Sprintf("set req.backend_hint = %s.backend(%s);", name, hashKey)
 		}
-		return fmt.Sprintf("set req.backend_hint = %s.backend()", name)
+		return fmt.Sprintf("set req.backend_hint = %s.backend();", name)
 	}
 	var defaultBackendHint *BackendHintConfig
 	result := []BackendHintConfig{}
@@ -246,7 +246,7 @@ func GetVcl(filename string) string {
 	type VarnishConfig struct {
 		Stale         int
 		Name          string
-		Varnish       int
+		Varnish       string
 		BackendConfig string
 		InitConfig    string
 		SelectConfig  string
