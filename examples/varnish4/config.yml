@@ -1,11 +1,19 @@
 name: varnish-test
 stale: 2
 varnish: "4"
+timeout:
+  connect: 1
+  firstByte: 2
+  betweenBytes: 2
 directors:
   -
     name: timtam
     prefix: /timtam
     type: fallback
+    timeout:
+      connect: 1
+      firstByte: 1
+      betweenBytes: 1 
     backends:
       -
         ip: 127.0.0.1

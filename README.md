@@ -27,6 +27,14 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 
 - `version` The vcl version , default is `new Date().toISOString()`
 
+- `timeout` The timeout setting for all directors
+
+  - `connect` The connect timeout, default is `2`
+
+  - `firstByte` The firstByte timeout, default is `5`
+
+  - `betweenBytes` The betweenBytes timeout, default is `2`
+
 - `directors` Director list, Array
 
   - `name` The director's name
@@ -36,6 +44,13 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
   - `host` The host for the director, optional
 
   - `type` The algorithm of load balance, it can be 'fallback', 'hash', 'random', 'round_robin'. The default is 'round_robin'
+
+  - `timeout` The director timeout setting, if not set , it will be use the global timeout setting
+    - `connect` The connect timeout
+
+    - `firstByte` The firstByte timeout
+
+    - `betweenBytes` The betweenBytes timeout
 
   - `backends` The backend list, Array
 

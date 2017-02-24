@@ -3,6 +3,12 @@ const path = require('path');
 const fs = require('fs');
 const yaml = require('js-yaml');
 
+const defaultTimeout = {
+  connect: 2,
+  firstByte: 5,
+  betweenBytes: 2,
+};
+
 /**
  * [readFilePromise description]
  * @param  {[type]} file [description]
@@ -60,7 +66,9 @@ function getBackendConfig(directors) {
       const arr = [];
       _.forEach(sortedDirectors, (director) => {
         _.forEach(director.backends, (backend, i) => {
-          const tmp = _.extend({}, backend);
+          const tmp = _.extend({
+            timeout: _.extend({}, defaultTimeout, director.timeout),
+          }, backend);
           tmp.name = `${_.camelCase(director.name)}${i}`;
           try {
             arr.push(template(tmp));
@@ -186,6 +194,7 @@ function getConfig(directors) {
 function getVcl(conf) {
   const config = _.extend({
     version: new Date().toISOString(),
+    timeout: defaultTimeout,
   }, conf);
   /* istanbul ignore if */
   if (!config.directors || !config.name) {
@@ -195,6 +204,10 @@ function getVcl(conf) {
     throw new Error('directors can not be empty');
   }
   _.forEach(config.directors, (item) => {
+    if (!item.timeout) {
+      /* eslint no-param-reassign:0 */
+      item.timeout = config.timeout;
+    }
     if (item.type === 'shard') {
       throw new Error('shard director is not support');
     }
