@@ -7,8 +7,8 @@ import directors;
 backend dcharts0 {
   .host = "127.0.0.1";
   .port = "3020";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -22,8 +22,8 @@ backend dcharts0 {
 backend dcharts1 {
   .host = "127.0.0.1";
   .port = "3030";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -37,8 +37,8 @@ backend dcharts1 {
 backend vicanso0 {
   .host = "127.0.0.1";
   .port = "3040";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -52,8 +52,8 @@ backend vicanso0 {
 backend vicanso1 {
   .host = "127.0.0.1";
   .port = "3050";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -67,9 +67,9 @@ backend vicanso1 {
 backend timtam0 {
   .host = "127.0.0.1";
   .port = "3000";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
-  .between_bytes_timeout = 2s;
+  .connect_timeout = 1s;
+  .first_byte_timeout = 1s;
+  .between_bytes_timeout = 1s;
   .probe = {
     .url = "/ping";
     .interval = 3s;
@@ -82,9 +82,9 @@ backend timtam0 {
 backend timtam1 {
   .host = "127.0.0.1";
   .port = "3010";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
-  .between_bytes_timeout = 2s;
+  .connect_timeout = 1s;
+  .first_byte_timeout = 1s;
+  .between_bytes_timeout = 1s;
   .probe = {
     .url = "/ping";
     .interval = 3s;
@@ -97,8 +97,8 @@ backend timtam1 {
 backend aslant0 {
   .host = "127.0.0.1";
   .port = "8000";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
   .between_bytes_timeout = 2s;
   .probe = {
     .url = "/ping";
@@ -319,7 +319,7 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-02-24T14:04:26Z");
+    synthetic("2017-02-27T07:04:17Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

@@ -1,5 +1,6 @@
 # varnish-generator
 
+The varnish-generator version is using `golang`, it just support `yaml` config
 
 ## Scripts
 

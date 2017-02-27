@@ -22,6 +22,13 @@ type Backend struct {
 	Weight int    `yaml:",omitempty"`
 }
 
+// Timeout the backend of varnish timeout setting
+type Timeout struct {
+	Connect      int `yaml:",omitempty"`
+	FirstByte    int `yaml:"firstByte,omitempty"`
+	BetweenBytes int `yaml:"betweenBytes,omitempty"`
+}
+
 // Director the varnish director
 type Director struct {
 	Name     string
@@ -30,6 +37,7 @@ type Director struct {
 	HashKey  string `yaml:"hashKey,omitempty"`
 	Type     string
 	Backends []Backend
+	Timeout  Timeout
 }
 
 // Config the varnish config
@@ -39,6 +47,7 @@ type Config struct {
 	Version   string `yaml:",omitempty"`
 	Varnish   string
 	Directors []Director
+	Timeout   Timeout
 }
 
 // By the sort function of director
@@ -121,15 +130,16 @@ func getBackendConfig(directors []Director) string {
 	tmpl, err := template.New("backend").Parse(string(data))
 	checkError(err)
 	type BackendConf struct {
-		Name string
-		IP   string
-		Port int
+		Name    string
+		IP      string
+		Port    int
+		Timeout Timeout
 	}
 	arr := []string{}
 	for _, director := range directors {
 		for index, backend := range director.Backends {
 			name := fmt.Sprintf("%s%d", toCamelCase(director.Name), index)
-			data := BackendConf{name, backend.IP, backend.Port}
+			data := BackendConf{name, backend.IP, backend.Port, director.Timeout}
 			var tpl bytes.Buffer
 			err := tmpl.Execute(&tpl, data)
 			checkError(err)
@@ -238,6 +248,31 @@ func getBackendSelectConfig(directors []Director) string {
 func GetVcl(filename string) string {
 	conf := getVarnishConfig(filename)
 	directors := conf.Directors
+	defaultConnectTimeout := 2
+	defaultFirstByteTimeout := 5
+	defaultBetweenBytesTimeout := 2
+	if conf.Timeout.Connect != 0 {
+		defaultConnectTimeout = conf.Timeout.Connect
+	}
+	if conf.Timeout.FirstByte != 0 {
+		defaultFirstByteTimeout = conf.Timeout.FirstByte
+	}
+	if conf.Timeout.BetweenBytes != 0 {
+		defaultBetweenBytesTimeout = conf.Timeout.BetweenBytes
+	}
+	for index, _ := range directors {
+		director := &directors[index]
+		timeout := &director.Timeout
+		if timeout.Connect == 0 {
+			timeout.Connect = defaultConnectTimeout
+		}
+		if timeout.FirstByte == 0 {
+			timeout.FirstByte = defaultFirstByteTimeout
+		}
+		if timeout.BetweenBytes == 0 {
+			timeout.BetweenBytes = defaultBetweenBytesTimeout
+		}
+	}
 	backendConfig := getBackendConfig(directors)
 	initConfig := getInitConfig(directors)
 	backendSelectConfig := getBackendSelectConfig(directors)
