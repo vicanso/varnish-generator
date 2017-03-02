@@ -79,7 +79,7 @@ sub vcl_recv {
   }
 
   # no cache request
-  if(req.http.Cache-Control == "no-cache" || req.url ~ "\?cache=false" || req.url ~ "&cache=false"){
+  if (<%= passRules %>) {
     return (pass);
   }
 

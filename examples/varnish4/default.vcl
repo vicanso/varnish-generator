@@ -202,7 +202,7 @@ sub vcl_recv {
   }
 
   # no cache request
-  if(req.http.Cache-Control == "no-cache" || req.url ~ "\?cache=false" || req.url ~ "&cache=false"){
+  if (req.http.Cache-Control == "no-cache" || req.url ~ "cache-control=no-cache") {
     return (pass);
   }
 
@@ -286,13 +286,13 @@ sub vcl_deliver {
   set req.http.varnishUse = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
   if (resp.http.Server-Timing) {
     if (std.real(req.http.varnishUse, 0) > 0) {
-      set resp.http.Server-Timing = "9=" + (now - std.real2time(std.real(req.http.startedAt, 0.0), now)) + ";Varnish," + resp.http.Server-Timing;
+      set resp.http.Server-Timing = "9=" + req.http.varnishUse + ";Varnish," + resp.http.Server-Timing;
     } else {
       set resp.http.Server-Timing = "9=0.000;Varnish," + resp.http.Server-Timing;
     }
   } else {
     if (std.real(req.http.varnishUse, 0) > 0) {
-      set resp.http.Server-Timing = "9=" + (now - std.real2time(std.real(req.http.startedAt, 0.0), now)) + ";Varnish";
+      set resp.http.Server-Timing = "9=" + req.http.varnishUse + ";Varnish";
     } else {
       set resp.http.Server-Timing = "9=0.000;Varnish";
     }
@@ -318,7 +318,7 @@ sub vcl_synth {
   if(resp.status == 701){
     synthetic("pong");
   } elsif(resp.status == 702){
-    synthetic("2017-02-24T06:33:52.995Z");
+    synthetic("2017-03-02T12:50:51.231Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -355,7 +355,7 @@ sub vcl_backend_response {
     beresp.http.Vary == "*"){
     # Hit-For-Pass
     set beresp.uncacheable = true;
-    set beresp.ttl = 120s;
+    set beresp.ttl = 300s;
     set beresp.grace = 0s;
     return (deliver);
   }

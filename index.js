@@ -186,6 +186,12 @@ function getConfig(directors) {
   });
 }
 
+function getPassRules(urls) {
+  const rules = ['req.http.Cache-Control == "no-cache"'];
+  _.forEach(urls, url => rules.push(`req.url ~ "${url}"`));
+  return rules.join(' || ');
+}
+
 /**
  * [getVcl description]
  * @param  {[type]} config [description]
@@ -195,6 +201,7 @@ function getVcl(conf) {
   const config = _.extend({
     version: new Date().toISOString(),
     timeout: defaultTimeout,
+    urlPassList: ['cache-control=no-cache'],
     hisForPassTTL: 120,
   }, conf);
   /* istanbul ignore if */
@@ -216,6 +223,7 @@ function getVcl(conf) {
   const cloneConfig = _.extend({
     stale: 3,
     varnish: '5',
+    passRules: getPassRules(config.urlPassList),
   }, config);
   return getConfig(cloneConfig.directors).then((data) => {
     _.extend(cloneConfig, data);

@@ -5,6 +5,8 @@ timeout:
   connect: 1
   firstByte: 2
   betweenBytes: 2
+urlPassList:
+  - cache-control=no-cache
 hisForPassTTL: 300
 directors:
   -
