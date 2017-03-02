@@ -1,6 +1,6 @@
 {
   "name": "varnish-generator",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "The simple way of generating general vcl file for varnish",
   "main": "index.js",
   "bin": {
@@ -27,13 +27,13 @@
   },
   "homepage": "https://github.com/vicanso/varnish-generator#readme",
   "devDependencies": {
-    "eslint": "^3.8.1",
-    "eslint-config-airbnb": "^12.0.0",
-    "eslint-plugin-import": "^2.0.1",
+    "eslint": "^3.12.2",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^2.2.3",
-    "eslint-plugin-react": "^6.4.1",
+    "eslint-plugin-react": "^6.8.0",
     "istanbul": "^0.4.5",
-    "koa": "^2.0.0-alpha.7",
+    "koa": "^2.0.1",
     "koa-router": "^7.0.1",
     "mocha": "^3.1.2",
     "superagent": "^3.3.2"
