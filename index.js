@@ -195,6 +195,7 @@ function getVcl(conf) {
   const config = _.extend({
     version: new Date().toISOString(),
     timeout: defaultTimeout,
+    hisForPassTTL: 120,
   }, conf);
   /* istanbul ignore if */
   if (!config.directors || !config.name) {

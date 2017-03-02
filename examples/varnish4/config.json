@@ -7,6 +7,7 @@
     "firstByte": 2,
     "betweenBytes": 2
   },
+  "hisForPassTTL": 300,
   "directors": [
     {
       "name": "timtam",

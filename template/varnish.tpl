@@ -236,7 +236,7 @@ sub vcl_backend_response {
     beresp.http.Vary == "*"){
     # Hit-For-Pass
     set beresp.uncacheable = true;
-    set beresp.ttl = 120s;
+    set beresp.ttl = <%= hisForPassTTL %>s;
     set beresp.grace = 0s;
     return (deliver);
   }

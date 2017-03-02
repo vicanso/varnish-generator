@@ -5,6 +5,7 @@ timeout:
   connect: 1
   firstByte: 2
   betweenBytes: 2
+hisForPassTTL: 300
 directors:
   -
     name: timtam
@@ -13,7 +14,7 @@ directors:
     timeout:
       connect: 1
       firstByte: 1
-      betweenBytes: 1 
+      betweenBytes: 1
     backends:
       -
         ip: 127.0.0.1
