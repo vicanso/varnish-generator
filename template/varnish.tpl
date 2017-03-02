@@ -163,13 +163,13 @@ sub vcl_deliver {
   set req.http.varnishUse = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
   if (resp.http.Server-Timing) {
     if (std.real(req.http.varnishUse, 0) > 0) {
-      set resp.http.Server-Timing = "9=" + (now - std.real2time(std.real(req.http.startedAt, 0.0), now)) + ";Varnish," + resp.http.Server-Timing;
+      set resp.http.Server-Timing = "9=" + req.http.varnishUse + ";Varnish," + resp.http.Server-Timing;
     } else {
       set resp.http.Server-Timing = "9=0.000;Varnish," + resp.http.Server-Timing;
     }
   } else {
     if (std.real(req.http.varnishUse, 0) > 0) {
-      set resp.http.Server-Timing = "9=" + (now - std.real2time(std.real(req.http.startedAt, 0.0), now)) + ";Varnish";
+      set resp.http.Server-Timing = "9=" + req.http.varnishUse + ";Varnish";
     } else {
       set resp.http.Server-Timing = "9=0.000;Varnish";
     }
