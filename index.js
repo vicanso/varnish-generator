@@ -235,7 +235,7 @@ function getVclFromFile(file) {
   const extname = path.extname(file);
   return readFilePromise(file)
     .then((data) => {
-      const json = extname === '.yml' ? yaml.load(data) : JSON.parse(data);
+      const json = extname === '.yml' ? yaml.safeLoad(data) : JSON.parse(data);
       return getVcl(json);
     });
 }
