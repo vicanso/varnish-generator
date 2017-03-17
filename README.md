@@ -34,6 +34,11 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
   - `firstByte` The firstByte timeout, default is `5`
 
   - `betweenBytes` The betweenBytes timeout, default is `2`
+- `urlPassList` The url match(RegExp) the setting will be pass
+
+- `hisForPassTTL` The hit for pass ttl
+
+- `hash` The hash setting
 
 - `directors` Director list, Array
 
@@ -64,11 +69,33 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
 {
   "name": "varnish-test",
   "stale": 2,
+  "varnish": "4",
+  "timeout": {
+    "connect": 1,
+    "firstByte": 2,
+    "betweenBytes": 2
+  },
+  "urlPassList": [
+    "cache-control=no-cache"
+  ],
+  "hisForPassTTL": 300,
+  "hash": [
+    "req.url",
+    [
+      "req.http.host",
+      "server.ip"
+    ]
+  ],
   "directors": [
     {
       "name": "timtam",
       "prefix": "/timtam",
-      "director": "fallback",
+      "type": "fallback",
+      "timeout": {
+        "connect": 1,
+        "firstByte": 1,
+        "betweenBytes": 1
+      },
       "backends": [
         {
           "ip": "127.0.0.1",
@@ -84,7 +111,7 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
       "name": "dcharts",
       "prefix": "/dcharts",
       "host": "dcharts.com",
-      "director": "hash",
+      "type": "hash",
       "hashKey": "req.http.cookie",
       "backends": [
         {
@@ -102,7 +129,7 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
     {
       "name": "vicanso",
       "host": "vicanso.com",
-      "director": "random",
+      "type": "random",
       "backends": [
         {
           "ip": "127.0.0.1",
@@ -127,6 +154,7 @@ varnish-generator -c ./examples/config.json -t ./examples/default.vcl
     }
   ]
 }
+
 ```
 
 ## How to use varnish better?

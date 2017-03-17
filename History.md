@@ -1,3 +1,7 @@
+# 1.3.0
+  * Supoort custom hash setting
+  * Use `yaml.safeLoad` insteadof `yaml.load`
+
 # 1.2.0
   * Improve the function to create `Server-Timing`
   * Support custom pass url setting
