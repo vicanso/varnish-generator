@@ -207,7 +207,7 @@ function getHash(hashConfig) {
         tmpArr.push(`if (${subItem}) {`);
         tmpArr.push(hashStr);
       } else if (index === total - 1) {
-        tmpArr.push(`} else {`);
+        tmpArr.push('} else {');
         tmpArr.push(hashStr);
         tmpArr.push('}');
       } else {
@@ -217,7 +217,7 @@ function getHash(hashConfig) {
     });
     arr.push(...tmpArr);
   });
-  return _.map(arr, (item) => `  ${item}`).join('\n');
+  return _.map(arr, item => `  ${item}`).join('\n');
 }
 
 /**
