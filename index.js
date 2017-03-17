@@ -192,6 +192,34 @@ function getPassRules(urls) {
   return rules.join(' || ');
 }
 
+function getHash(hashConfig) {
+  const arr = [];
+  _.forEach(hashConfig, (item) => {
+    if (_.isString(item)) {
+      arr.push(`hash_data(${item});`);
+      return;
+    }
+    const total = item.length;
+    const tmpArr = [];
+    _.forEach(item, (subItem, index) => {
+      const hashStr = `  hash_data(${subItem});`;
+      if (index === 0) {
+        tmpArr.push(`if (${subItem}) {`);
+        tmpArr.push(hashStr);
+      } else if (index === total - 1) {
+        tmpArr.push(`} else {`);
+        tmpArr.push(hashStr);
+        tmpArr.push('}');
+      } else {
+        tmpArr.push(`} elsif (${subItem}) {`);
+        tmpArr.push(hashStr);
+      }
+    });
+    arr.push(...tmpArr);
+  });
+  return _.map(arr, (item) => `  ${item}`).join('\n');
+}
+
 /**
  * [getVcl description]
  * @param  {[type]} config [description]
@@ -202,6 +230,13 @@ function getVcl(conf) {
     version: new Date().toISOString(),
     timeout: defaultTimeout,
     urlPassList: ['cache-control=no-cache'],
+    hash: [
+      'req.url',
+      [
+        'req.http.host',
+        'server.ip',
+      ],
+    ],
     hisForPassTTL: 120,
   }, conf);
   /* istanbul ignore if */
@@ -223,6 +258,7 @@ function getVcl(conf) {
   const cloneConfig = _.extend({
     stale: 3,
     varnish: '5',
+    hashConfig: getHash(config.hash),
     passRules: getPassRules(config.urlPassList),
   }, config);
   return getConfig(cloneConfig.directors).then((data) => {

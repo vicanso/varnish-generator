@@ -11,6 +11,13 @@
     "cache-control=no-cache"
   ],
   "hisForPassTTL": 300,
+  "hash": [
+    "req.url",
+    [
+      "req.http.host",
+      "server.ip"
+    ]
+  ],
   "directors": [
     {
       "name": "timtam",

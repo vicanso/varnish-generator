@@ -234,7 +234,7 @@ sub vcl_pass {
 }
 
 
-sub vcl_hash{
+sub vcl_hash {
   hash_data(req.url);
   if (req.http.host) {
     hash_data(req.http.host);
@@ -315,10 +315,10 @@ sub custom_ctrl{
 
 
 sub vcl_synth {
-  if(resp.status == 701){
+  if (resp.status == 701) {
     synthetic("pong");
-  } elsif(resp.status == 702){
-    synthetic("2017-03-02T12:51:00.299Z");
+  } elsif (resp.status == 702) {
+    synthetic("2017-03-17T14:48:15.204Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

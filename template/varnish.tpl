@@ -111,13 +111,8 @@ sub vcl_pass {
 }
 
 
-sub vcl_hash{
-  hash_data(req.url);
-  if (req.http.host) {
-    hash_data(req.http.host);
-  } else {
-    hash_data(server.ip);
-  }
+sub vcl_hash {
+<%= hashConfig %>
   return (lookup);
 }
 
@@ -192,9 +187,9 @@ sub custom_ctrl{
 
 
 sub vcl_synth {
-  if(resp.status == 701){
+  if (resp.status == 701) {
     synthetic("pong");
-  } elsif(resp.status == 702){
+  } elsif (resp.status == 702) {
     synthetic("<%= version %>");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
