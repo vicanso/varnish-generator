@@ -155,9 +155,9 @@ sub vcl_recv {
     }
     /* set Via */
     if (req.http.Via) {
-      set req.http.Via = req.http.Via + ", varnish-test";
+      set req.http.Via = req.http.Via + ", tree-mac-air.local";
     } else {
-      set req.http.Via = "varnish-test";
+      set req.http.Via = "tree-mac-air.local";
     }
     set req.http.startedAt = std.time2real(now, 0.0);
   }
@@ -318,7 +318,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-03-17T14:48:15.204Z");
+    synthetic("2017-03-24T13:18:53.871Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

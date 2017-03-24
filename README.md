@@ -5,6 +5,8 @@
 [![npm](http://img.shields.io/npm/v/varnish-generator.svg?style=flat-square)](https://www.npmjs.org/package/varnish-generator)
 [![Github Releases](https://img.shields.io/npm/dm/varnish-generator.svg?style=flat-square)](https://github.com/vicanso/varnish-generator)
 
+Have a try [http://aslant.site/varnish-generator/](http://aslant.site/varnish-generator/)!
+
 ## Installation
 
 ```bash

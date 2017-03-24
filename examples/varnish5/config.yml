@@ -1,4 +1,4 @@
-name: varnish-test
+name: $HOSTNAME
 stale: 2
 varnish: "5"
 directors:

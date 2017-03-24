@@ -2,6 +2,7 @@ const _ = require('lodash');
 const path = require('path');
 const fs = require('fs');
 const yaml = require('js-yaml');
+const os = require('os');
 
 const defaultTimeout = {
   connect: 2,
@@ -245,6 +246,11 @@ function getVcl(conf) {
   }
   if (!config.directors.length) {
     throw new Error('directors can not be empty');
+  }
+  if (config.name === '$HOSTNAME') {
+    config.name = os.hostname();
+  } else if (config.name[0] === '$') {
+    config.name = process.env[config.name.substring(1)];
   }
   _.forEach(config.directors, (item) => {
     if (!item.timeout) {
