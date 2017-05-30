@@ -1,3 +1,6 @@
+# 1.4.0
+  * Change `varnish used` from `s` to `ms`
+
 # 1.3.0
   * Supoort custom hash setting
   * Use `yaml.safeLoad` insteadof `yaml.load`
