@@ -283,7 +283,7 @@ sub vcl_deliver {
   #
   # You can do accounting or modifying the final object here.
   set resp.http.X-Hits = obj.hits;
-  set req.http.varnishUse = now - std.real2time(std.real(req.http.startedAt, 0.0), now);
+  set req.http.varnishUse = 1000 * std.real((now - std.real2time(std.real(req.http.startedAt, 0.0), now)), 0);
   if (resp.http.Server-Timing) {
     if (std.real(req.http.varnishUse, 0) > 0) {
       set resp.http.Server-Timing = "9=" + req.http.varnishUse + ";Varnish," + resp.http.Server-Timing;
@@ -318,7 +318,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-03-17T14:47:50.083Z");
+    synthetic("2017-05-30T07:22:51.365Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
