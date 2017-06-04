@@ -1,3 +1,6 @@
+# 1.4.1
+  * Add "varnish" for `Server-Timing`
+
 # 1.4.0
   * Change `varnish used` from `s` to `ms`
 
