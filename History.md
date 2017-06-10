@@ -1,3 +1,6 @@
+# 1.4.2
+  * Varnish config support two more port’s setting: `port1,port2,port3` and `port1…port2`
+
 # 1.4.1
   * Add "varnish" for `Server-Timing`
 
