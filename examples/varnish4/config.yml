@@ -36,11 +36,11 @@ directors:
     backends:
       -
         ip: 127.0.0.1
-        port: 3020
+        port: 3020,3021,3022
         weight: 5
       -
         ip: 127.0.0.1
-        port: 3030
+        port: 3030..3035
         weight: 3
   -
     name: vicanso

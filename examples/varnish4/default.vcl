@@ -21,7 +21,97 @@ backend dcharts0 {
 
 backend dcharts1 {
   .host = "127.0.0.1";
+  .port = "3021";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend dcharts2 {
+  .host = "127.0.0.1";
+  .port = "3022";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend dcharts3 {
+  .host = "127.0.0.1";
   .port = "3030";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend dcharts4 {
+  .host = "127.0.0.1";
+  .port = "3031";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend dcharts5 {
+  .host = "127.0.0.1";
+  .port = "3032";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend dcharts6 {
+  .host = "127.0.0.1";
+  .port = "3033";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend dcharts7 {
+  .host = "127.0.0.1";
+  .port = "3034";
   .connect_timeout = 1s;
   .first_byte_timeout = 2s;
   .between_bytes_timeout = 2s;
@@ -119,7 +209,13 @@ backend aslant0 {
 sub vcl_init {
   new dcharts = directors.hash();
   dcharts.add_backend(dcharts0, 5);
-  dcharts.add_backend(dcharts1, 3);
+  dcharts.add_backend(dcharts1, 5);
+  dcharts.add_backend(dcharts2, 5);
+  dcharts.add_backend(dcharts3, 3);
+  dcharts.add_backend(dcharts4, 3);
+  dcharts.add_backend(dcharts5, 3);
+  dcharts.add_backend(dcharts6, 3);
+  dcharts.add_backend(dcharts7, 3);
   new vicanso = directors.random();
   vicanso.add_backend(vicanso0, 10);
   vicanso.add_backend(vicanso1, 5);
@@ -318,7 +414,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-06-04T14:10:50.115Z");
+    synthetic("2017-06-10T11:28:53.800Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

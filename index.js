@@ -58,6 +58,32 @@ function sort(items) {
   return _.sortBy(arr, item => item.sortKey);
 }
 
+function convertBackends(backends) {
+  const result = [];
+  _.forEach(backends, (backend) => {
+    if (_.isString(backend.port)) {
+      const port = backend.port;
+      let portList = [];
+      if (port.indexOf(',') !== -1) {
+        portList = port.split(',');
+      } else if (port.indexOf('..') !== -1) {
+        const arr = port.split('..');
+        portList = _.range(parseInt(arr[0], 10), parseInt(arr[1], 10));
+      } else {
+        portList.push(port);
+      }
+      _.forEach(portList, (port) => {
+        result.push(_.extend({}, backend, {
+          port: parseInt(port, 10),
+        }));
+      });
+    } else {
+      result.push(backend);
+    }
+  });
+  return result;
+}
+
 function getBackendConfig(directors) {
   const sortedDirectors = sort(directors);
   return readFilePromise(path.join(__dirname,
@@ -66,7 +92,8 @@ function getBackendConfig(directors) {
       const template = _.template(tpl);
       const arr = [];
       _.forEach(sortedDirectors, (director) => {
-        _.forEach(director.backends, (backend, i) => {
+        const backends = convertBackends(director.backends);
+        _.forEach(backends, (backend, i) => {
           const tmp = _.extend({
             timeout: _.extend({}, defaultTimeout, director.timeout),
           }, backend);
@@ -94,7 +121,8 @@ function getInitConfig(directors) {
         const name = _.camelCase(director.name);
         const type = director.type || 'round_robin';
         arr.push(`new ${name} = directors.${type}();`);
-        _.forEach(director.backends, (server, i) => {
+        const backends = convertBackends(director.backends);
+        _.forEach(backends, (server, i) => {
           if (type === 'random' || type === 'hash') {
             arr.push(`${name}.add_backend(${name + i}, ${server.weight || 1});`);
           } else {
