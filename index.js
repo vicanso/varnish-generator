@@ -72,9 +72,9 @@ function convertBackends(backends) {
       } else {
         portList.push(port);
       }
-      _.forEach(portList, (port) => {
+      _.forEach(portList, (item) => {
         result.push(_.extend({}, backend, {
-          port: parseInt(port, 10),
+          port: parseInt(item, 10),
         }));
       });
     } else {
