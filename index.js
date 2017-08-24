@@ -96,6 +96,7 @@ function getBackendConfig(directors) {
         _.forEach(backends, (backend, i) => {
           const tmp = _.extend({
             timeout: _.extend({}, defaultTimeout, director.timeout),
+            ping: director.ping || '/ping',
           }, backend);
           tmp.name = `${_.camelCase(director.name)}${i}`;
           try {

@@ -71,7 +71,7 @@ backend timtam0 {
   .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
-    .url = "/ping";
+    .url = "/my-ping";
     .interval = 3s;
     .timeout = 5s;
     .window = 5;
@@ -86,7 +86,7 @@ backend timtam1 {
   .first_byte_timeout = 5s;
   .between_bytes_timeout = 2s;
   .probe = {
-    .url = "/ping";
+    .url = "/my-ping";
     .interval = 3s;
     .timeout = 5s;
     .window = 5;
@@ -318,7 +318,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-06-04T14:10:45.410Z");
+    synthetic("2017-08-24T12:19:15.722Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

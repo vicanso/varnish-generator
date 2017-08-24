@@ -6,6 +6,7 @@ directors:
     name: timtam
     prefix: /timtam
     type: fallback
+    ping: /my-ping
     backends:
       -
         ip: 127.0.0.1
