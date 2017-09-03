@@ -1,3 +1,9 @@
+# 1.4.4
+  * Fix the uncacheable is not do gzip
+
+# 1.4.3
+  * Support custom probe url
+
 # 1.4.2
   * Varnish config support two more port’s setting: `port1,port2,port3` and `port1…port2`
 
