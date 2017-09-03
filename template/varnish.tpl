@@ -214,14 +214,13 @@ sub vcl_backend_fetch {
 
 
 sub vcl_backend_response {
-  if (bereq.uncacheable) {
-    return (deliver);
-  }
   # the response body is text, do gzip (judge by response header Content-Type)
   if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
     set beresp.do_gzip = true;
   }
-
+  if (bereq.uncacheable) {
+    return (deliver);
+  }
   # The following scenarios set uncacheable
   if (beresp.ttl <= 0s ||
     beresp.http.Set-Cookie ||
