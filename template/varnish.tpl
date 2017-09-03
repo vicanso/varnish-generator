@@ -216,7 +216,10 @@ sub vcl_backend_fetch {
 sub vcl_backend_response {
   # the response body is text, do gzip (judge by response header Content-Type)
   if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
-    set beresp.do_gzip = true;
+    # do gzip if the content length is gte 1000bytes 
+    if (beresp.http.Content-Length ~ "^\d\d\d\d") {
+      set beresp.do_gzip = true;
+    }
   }
   if (bereq.uncacheable) {
     return (deliver);

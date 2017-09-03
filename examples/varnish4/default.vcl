@@ -414,7 +414,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-06-10T11:28:53.800Z");
+    synthetic("2017-09-03T07:21:20.088Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -434,14 +434,16 @@ sub vcl_backend_fetch {
 
 
 sub vcl_backend_response {
+  # the response body is text, do gzip (judge by response header Content-Type)
+  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
+    # do gzip if the content length is gte 1000bytes 
+    if (beresp.http.Content-Length ~ "^\d\d\d\d") {
+      set beresp.do_gzip = true;
+    }
+  }
   if (bereq.uncacheable) {
     return (deliver);
   }
-  # the response body is text, do gzip (judge by response header Content-Type)
-  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
-    set beresp.do_gzip = true;
-  }
-
   # The following scenarios set uncacheable
   if (beresp.ttl <= 0s ||
     beresp.http.Set-Cookie ||
