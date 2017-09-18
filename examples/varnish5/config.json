@@ -5,7 +5,7 @@
   "directors": [
     {
       "name": "timtam",
-      "prefix": "/timtam",
+      "service": "timtam",
       "type": "fallback",
       "backends": [
         {

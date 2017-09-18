@@ -4,7 +4,7 @@ varnish: "5"
 directors:
   -
     name: timtam
-    prefix: /timtam
+    service: timtam
     type: fallback
     ping: /my-ping
     backends:

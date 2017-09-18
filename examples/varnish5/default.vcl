@@ -4,6 +4,36 @@ import std;
 import directors;
 
 # backend start
+backend timtam0 {
+  .host = "127.0.0.1";
+  .port = "3000";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/my-ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
+backend timtam1 {
+  .host = "127.0.0.1";
+  .port = "3010";
+  .connect_timeout = 2s;
+  .first_byte_timeout = 5s;
+  .between_bytes_timeout = 2s;
+  .probe = {
+    .url = "/my-ping";
+    .interval = 3s;
+    .timeout = 5s;
+    .window = 5;
+    .threshold = 3;
+  }
+}
+
 backend dcharts0 {
   .host = "127.0.0.1";
   .port = "3020";
@@ -64,36 +94,6 @@ backend vicanso1 {
   }
 }
 
-backend timtam0 {
-  .host = "127.0.0.1";
-  .port = "3000";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
-  .between_bytes_timeout = 2s;
-  .probe = {
-    .url = "/my-ping";
-    .interval = 3s;
-    .timeout = 5s;
-    .window = 5;
-    .threshold = 3;
-  }
-}
-
-backend timtam1 {
-  .host = "127.0.0.1";
-  .port = "3010";
-  .connect_timeout = 2s;
-  .first_byte_timeout = 5s;
-  .between_bytes_timeout = 2s;
-  .probe = {
-    .url = "/my-ping";
-    .interval = 3s;
-    .timeout = 5s;
-    .window = 5;
-    .threshold = 3;
-  }
-}
-
 backend aslant0 {
   .host = "127.0.0.1";
   .port = "8000";
@@ -117,15 +117,15 @@ backend aslant0 {
 
 # init start
 sub vcl_init {
+  new timtam = directors.fallback();
+  timtam.add_backend(timtam0);
+  timtam.add_backend(timtam1);
   new dcharts = directors.hash();
   dcharts.add_backend(dcharts0, 5);
   dcharts.add_backend(dcharts1, 3);
   new vicanso = directors.random();
   vicanso.add_backend(vicanso0, 10);
   vicanso.add_backend(vicanso1, 5);
-  new timtam = directors.fallback();
-  timtam.add_backend(timtam0);
-  timtam.add_backend(timtam1);
   new aslant = directors.round_robin();
   aslant.add_backend(aslant0);
 }
@@ -155,9 +155,9 @@ sub vcl_recv {
     }
     /* set Via */
     if (req.http.Via) {
-      set req.http.Via = req.http.Via + ", xieshuzhous-Air";
+      set req.http.Via = req.http.Via + ", xieshuzhous-MacBook-Air.local";
     } else {
-      set req.http.Via = "xieshuzhous-Air";
+      set req.http.Via = "xieshuzhous-MacBook-Air.local";
     }
     set req.http.startedAt = std.time2real(now, 0.0);
   }
@@ -166,12 +166,12 @@ sub vcl_recv {
 
   /* backend selector */
   set req.backend_hint = aslant.backend();
-  if (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {
+  if (req.http.X-Service == "timtam") {
+    set req.backend_hint = timtam.backend();
+  } elsif (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {
     set req.backend_hint = dcharts.backend(req.http.cookie);
   } elsif (req.http.host == "vicanso.com") {
     set req.backend_hint = vicanso.backend();
-  } elsif (req.url ~ "^/timtam") {
-    set req.backend_hint = timtam.backend();
   }
 
   if (req.method != "GET" &&
@@ -318,7 +318,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-09-03T07:21:04.938Z");
+    synthetic("2017-09-18T11:57:56.743Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;

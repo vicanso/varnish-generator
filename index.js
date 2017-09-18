@@ -46,13 +46,16 @@ function sort(items) {
   const arr = _.map(items, (item) => {
     const tmp = _.extend({}, item);
     let sortWeight = 0;
+    if (!item.service) {
+      sortWeight += 8;
+    }
     if (!item.host) {
       sortWeight += 4;
     }
     if (!item.prefix) {
       sortWeight += 2;
     }
-    tmp.sortKey = `${sortWeight}-${item.name}`;
+    tmp.sortKey = `${_.padStart(sortWeight, 2, '0')}-${item.name}`;
     return tmp;
   });
   return _.sortBy(arr, item => item.sortKey);
@@ -146,6 +149,10 @@ function getBackendSelectConfig(directors) {
   let defaultDirector;
   _.forEach(sortedDirectors, (director) => {
     const arr = [];
+    /* istanbul ignore else */
+    if (director.service) {
+      arr.push(`req.http.X-Service == "${director.service}"`);
+    }
     /* istanbul ignore else */
     if (director.host) {
       arr.push(`req.http.host == "${director.host}"`);
