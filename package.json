@@ -1,12 +1,13 @@
 {
   "name": "varnish-generator",
-  "version": "1.4.4",
+  "version": "1.5.0",
   "description": "The simple way of generating general vcl file for varnish",
   "main": "index.js",
   "bin": {
     "varnish-generator": "./.bin/varnish-generator"
   },
   "scripts": {
+    "size": "t=\"$(npm pack .)\"; wc -c \"${t}\"; tar tvf \"${t}\"; rm \"${t}\";",
     "test": "node ./node_modules/.bin/eslint index.js && node ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha ./test/*.js --"
   },
   "repository": {

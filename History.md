@@ -1,3 +1,6 @@
+# 1.5.0
+  * Support `X-Server` to choose backend 
+
 # 1.4.4
   * Fix the uncacheable is not do gzip
 
