@@ -17,7 +17,9 @@ directors:
   -
     name: dcharts
     prefix: /dcharts
-    host: dcharts.com
+    host:
+      - dcharts.com
+      - www.dcharts.com
     type: hash
     hashKey: req.http.cookie
     backends:

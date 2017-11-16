@@ -168,7 +168,7 @@ sub vcl_recv {
   set req.backend_hint = aslant.backend();
   if (req.http.X-Service == "timtam") {
     set req.backend_hint = timtam.backend();
-  } elsif (req.http.host == "dcharts.com" && req.url ~ "^/dcharts") {
+  } elsif ((req.http.host == "dcharts.com" || req.http.host == "www.dcharts.com") && req.url ~ "^/dcharts") {
     set req.backend_hint = dcharts.backend(req.http.cookie);
   } elsif (req.http.host == "vicanso.com") {
     set req.backend_hint = vicanso.backend();
@@ -318,7 +318,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-09-18T11:57:56.743Z");
+    synthetic("2017-11-16T06:45:55.412Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -343,11 +343,8 @@ sub vcl_backend_fetch {
 
 sub vcl_backend_response {
   # the response body is text, do gzip (judge by response header Content-Type)
-  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/json") {
-    # do gzip if the content length is gte 1000bytes 
-    if (beresp.http.Content-Length ~ "^\d\d\d\d") {
-      set beresp.do_gzip = true;
-    }
+  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/x-javascript" || beresp.http.Content-Type ~ "application/json") {
+    set beresp.do_gzip = true;
   }
   if (bereq.uncacheable) {
     return (deliver);

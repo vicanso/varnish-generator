@@ -1,3 +1,6 @@
+# 1.5.3
+  * Support multi host for one director
+
 # 1.5.0
   * Support `X-Server` to choose backend 
 

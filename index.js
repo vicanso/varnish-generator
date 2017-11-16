@@ -155,7 +155,12 @@ function getBackendSelectConfig(directors) {
     }
     /* istanbul ignore else */
     if (director.host) {
-      arr.push(`req.http.host == "${director.host}"`);
+      if (_.isArray(director.host)) {
+        const hostEqList = _.map(director.host, item => `req.http.host == "${item}"`);
+        arr.push(`(${hostEqList.join(' || ')})`);
+      } else {
+        arr.push(`req.http.host == "${director.host}"`);
+      }
     }
     /* istanbul ignore else */
     if (director.prefix) {
