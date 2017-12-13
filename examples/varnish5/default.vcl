@@ -318,7 +318,7 @@ sub vcl_synth {
   if (resp.status == 701) {
     synthetic("pong");
   } elsif (resp.status == 702) {
-    synthetic("2017-11-16T06:45:55.412Z");
+    synthetic("2017-12-13T12:34:56.521Z");
   }
   set resp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
   set resp.status = 200;
@@ -343,8 +343,13 @@ sub vcl_backend_fetch {
 
 sub vcl_backend_response {
   # the response body is text, do gzip (judge by response header Content-Type)
-  if (beresp.http.Content-Type ~ "text" || beresp.http.Content-Type ~ "application/javascript" || beresp.http.Content-Type ~ "application/x-javascript" || beresp.http.Content-Type ~ "application/json") {
-    set beresp.do_gzip = true;
+  if (!beresp.http.Content-Encoding) {
+    if (beresp.http.Content-Type ~ "text" ||
+      beresp.http.Content-Type ~ "application/javascript" ||
+      beresp.http.Content-Type ~ "application/x-javascript"
+      || beresp.http.Content-Type ~ "application/json") {
+      set beresp.do_gzip = true;
+    }
   }
   if (bereq.uncacheable) {
     return (deliver);

@@ -1,3 +1,6 @@
+# 1.5.4
+  * Add `Content-Encoding` judgement
+
 # 1.5.3
   * Support multi host for one director
 
